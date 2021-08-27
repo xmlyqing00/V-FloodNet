@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage.morphology import binary_dilation
 import cv2
+
 from numpy.linalg import norm
 
 import torch
@@ -26,6 +27,7 @@ def dist(p0, p1, axis):
 
 
 def add_overlay(img, mask, colors, alpha=0.7, cscale=1):
+
     ids = np.unique(mask)
     img_overlay = img.copy()
     ones_np = np.ones(img.shape) * (1 - alpha)
