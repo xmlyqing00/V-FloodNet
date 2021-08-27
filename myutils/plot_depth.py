@@ -55,7 +55,7 @@ class Visualizer:
 
         pcm = axs[1].contourf(x, y, self.get_depth(x, y), 8)
         if len(vlist) > 1:
-            fig.colorbar(pcm, orientation='vertical', ax=axs[1])
+            fig.colorbar(pcm, orientation='vertical', ax=axs[1], format='%d')
         else:
             axs[1].text(900, 40, f'water depth: {vlist[0]:.0f} cm', fontsize=14)
         contours = axs[1].contour(x, y, self.get_depth(x, y), 8, colors='black')

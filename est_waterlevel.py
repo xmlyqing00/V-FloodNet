@@ -441,7 +441,8 @@ def plot_hydrograph(out_dir, info_dir):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_subplot(111)
 
-    ax.plot(time_arr_gt, gt_csv.iloc[:, gt_col_id], '-', linewidth=3, label=f'Groundtruth')
+    # ax.plot(time_arr_gt, gt_csv.iloc[:, gt_col_id], '-', linewidth=3, label=f'Groundtruth')
+    ax.plot(time_arr_gt, gt_csv.iloc[:, gt_col_id], '^', markersize=15, label=f'Groundtruth')
 
     # for i in range(waterlevel_px.shape[0]):
     #     ax.plot(time_arr_eval, waterlevel_px[i, :], '.', label=f'By ref {i} (ft)')
@@ -455,7 +456,7 @@ def plot_hydrograph(out_dir, info_dir):
         ax.axhline(y=10.3, linestyle='--')
         ax.legend(loc='upper right', fontsize=fontsize)
     else:
-        ax.plot(time_arr_eval, waterlevel_meter_avg, 'o', markersize=10, label=f'Est Water Level')
+        ax.plot(time_arr_eval, waterlevel_meter_avg, 'o', markersize=15, label=f'Est Water Level')
         ax.legend(loc='lower right', fontsize=fontsize)
 
     ax.xaxis.set_major_locator(ticker_locator)
@@ -470,10 +471,7 @@ def plot_hydrograph(out_dir, info_dir):
     fig.savefig(waterlevel_path, dpi=200)
 
     print(f'Save figure to {waterlevel_path}.')
-    #
-    # arr_gt_sample = get_arr_gt_sample(waterlevel_px, gt_csv.iloc[:, gt_col_id], time_arr_eval, time_arr_gt)
-    # err = abs(waterlevel_meter_avg - arr_gt_sample) / waterlevel_meter_avg
-    # print('Relative error rate:', err.mean())
+
 
 
 if __name__ == '__main__':
@@ -513,7 +511,7 @@ if __name__ == '__main__':
     # else:
     #     ref_obj_type = 1
 
-    if 'boston_harbor' in img_dir_name:
+    if 'boston_harbor' in img_dir_name or 'LSU' in img_dir_name:
         enable_tracker = True
     else:
         enable_tracker = False

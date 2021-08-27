@@ -144,7 +144,7 @@ class WaterdepthEstimation:
 
         stopsign_d = []
         stopsign_pt = []
-        viz_img = self.viz_dict['viz_img']
+        viz_img = self.viz_dict['water_by_img']
 
         for instance_mask in pred_masks:
             edge_map = cv2.Canny(instance_mask, 75, 200)

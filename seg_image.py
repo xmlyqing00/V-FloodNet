@@ -31,7 +31,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Detectron2 demo for builtin models')
     parser.add_argument('--gpu', type=int, default=0,
                         help='GPU card id.')
-    parser.add_argument('--water-path', default='records/cp_WaterNet_best.pth',
+    parser.add_argument('--water-path', default='/Ship03/Sources/WaterNetV3/image_module/WaterSegModels/cp_WaterNet_best.pth',
                         help='Path to WaterNet checkpoint')
     parser.add_argument('--img_dir', required=True,
                         help='Input image directory.')
@@ -80,23 +80,24 @@ if __name__ == '__main__':
         with open(seg_res_path, 'wb') as f:
             pickle.dump(seg_res, f)
 
+        img_water_path = os.path.join(viz_dir, img_name + '_water.png')
+        cv2.imwrite(img_water_path, seg_res['water_mask'])
+
         viz_img_water_path = os.path.join(viz_dir, img_name + '_water_by_img.png')
         cv2.imwrite(viz_img_water_path, viz_dict['water_by_img'])
         viz_img_water_path = os.path.join(viz_dir, img_name + '_seg_by_img.png')
         cv2.imwrite(viz_img_water_path, viz_dict['seg_by_img'])
 
+        # continue
+
+        water_depth, viz_dict = waterdepth_esitmation.est(seg_res, viz_dict, img)
+        viz = myutils.Visualizer(img, viz_dir, img_name)
+        if 'skeleton' in water_depth:
+            viz.plot_depth(water_depth['skeleton'], water_depth['skeleton_vlist'], seg_res['water_mask'], suffix='skeleton')
+        if 'stopsign' in water_depth:
+            viz.plot_depth(water_depth['stopsign'], water_depth['stopsign_vlist'], seg_res['water_mask'], suffix='stopsign')
+
         continue
-
-        # water_depth, viz_dict = waterdepth_esitmation.est(seg_res, viz_dict, img)
-
-
-        # if 'skeleton' in water_depth:
-        #     viz.plot_depth(water_depth['skeleton'], water_depth['skeleton_vlist'], seg_res['water_mask'], suffix='skeleton')
-        # if 'stopsign' in water_depth:
-        #     viz.plot_depth(water_depth['stopsign'], water_depth['stopsign_vlist'], seg_res['water_mask'], suffix='stopsign')
-
-
-
         basename = os.path.basename(path)[:-4]
         water_mask_path = os.path.join(args.output, basename + '_water_mask.npy')
         water_mask = np.load(water_mask_path)
@@ -104,6 +105,7 @@ if __name__ == '__main__':
         water_viz = np.concatenate((water_mask * 200,
                                     np.zeros_like(water_mask),
                                     np.zeros_like(water_mask)), axis=2).astype(np.uint8)
+
 
         if args.output:
             # if os.path.isdir(args.output):

@@ -73,7 +73,7 @@ class ImageBasedModel:
         seg_res = {
             'pred_obj': pred_obj,
             'pred_skeleton': pred_skeleton,
-            'water_by_img': water_mask
+            'water_mask': water_mask
         }
 
         return seg_res, viz_dict

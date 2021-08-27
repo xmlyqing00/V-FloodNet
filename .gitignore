@@ -7,3 +7,6 @@ records/cp_WaterNet.pth.tar
 output/
 overlay/
 records/
+
+video_module/logs/
+image_module/WaterSegModels/
