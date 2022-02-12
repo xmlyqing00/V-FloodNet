@@ -20,7 +20,7 @@ torch.set_grad_enabled(False)
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='Eval AFB-URR')
+    parser = argparse.ArgumentParser(description='Test Video Segmentation')
     parser.add_argument('--gpu', type=int, default=0,
                         help='GPU card id.')
     parser.add_argument('--budget', type=int, default='250000',
@@ -40,7 +40,7 @@ def get_args():
     return parser.parse_args()
 
 
-def main(args, device):
+def main(args, device, palette):
     model = AFB_URR(device, update_bank=True, load_imagenet_params=False)
     model = model.to(device)
     model.eval()
@@ -139,6 +139,6 @@ if __name__ == '__main__':
 
     palette = [0, 0, 0, 0, 0, 128, 0, 128, 0, 128, 0, 0]
 
-    main(args, device)
+    main(args, device, palette)
 
     print(myutils.gct(), 'Test video segmentation done.')
