@@ -26,18 +26,23 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 from glob import glob
+from tqdm import tqdm
 
 import torch
 import torchvision.transforms as tf
 import torchvision.transforms.functional as TF
 
-ROOT_DIR = str(Path(__file__).resolve().parents[1])
+import myutils
 
-time_str = timestr = time.strftime("%Y-%m-%d %H-%M-%S")
-DEFAULT_OUT = os.path.join(ROOT_DIR, 'output', 'test_waterseg', time_str)
-DEFAULT_PALETTE = os.path.join(ROOT_DIR, 'video_module', "assets", "mask_palette.png")
-sys.path.append(ROOT_DIR)
-print("Added", ROOT_DIR, "to PATH.")
+# ROOT_DIR = str(Path(__file__).resolve().parents[0])
+ROOT_DIR = './'
+# time_str = timestr = time.strftime("%Y-%m-%d %H-%M-%S")
+# DEFAULT_OUT = os.path.join(ROOT_DIR, 'output', 'test_waterseg', time_str)
+DEFAULT_OUT = os.path.join(ROOT_DIR, 'output', 'test_image_seg')
+DEFAULT_PALETTE = os.path.join(ROOT_DIR, "assets", "mask_palette.png")
+# sys.path.append(ROOT_DIR)
+# print("Added", ROOT_DIR, "to PATH.")
+
 
 def norm_imagenet(img_pil, dims):
     """
@@ -62,12 +67,11 @@ def norm_imagenet(img_pil, dims):
     return img_norm
 
 
-def predict_one(path, model, palette_path, mask_outdir, overlay_outdir):
+def predict_one(path, model, mask_outdir, overlay_outdir, device):
     """
     Predicts a single image from path
     :param path: Path to image
     :param model: Loaded Torch Model
-    :param palette_path: Path to palette file for overlay and mask output
     :param mask_outdir: Filepath to mask out directory
     :param overlay_outdir: Filepath to overlay out directory
     :return: None
@@ -75,7 +79,7 @@ def predict_one(path, model, palette_path, mask_outdir, overlay_outdir):
     img_pil = Image.open(path)
 
     # Prediction is an PIL Image of 0s and 1s
-    prediction = predict_pil(model, img_pil, palette_path, model_dims=(416, 416))
+    prediction = predict_pil(model, img_pil, model_dims=(416, 416), device=device)
 
     basename = str(Path(os.path.basename(path)).stem)
     mask_savepth = os.path.join(mask_outdir, basename + '.png')
@@ -88,16 +92,15 @@ def predict_one(path, model, palette_path, mask_outdir, overlay_outdir):
     Image.fromarray(overlay_np.astype(np.uint8)).save(over_savepth)
 
 
-def predict_pil(model, img_pil, palette_path, model_dims):
+def predict_pil(model, img_pil, model_dims, device):
     """
     Predicts a single PIL Image
     :param model: Loaded PyTorch model
     :param img_pil: PIL image
-    :param palette_path: Palette filepath for reconstruction
     :param model_dims: Model input dimensions
     :return: Segmentation prediction as PIL Image
     """
-    palette = Image.open(palette_path).getpalette()
+    palette = [0, 0, 0, 0, 0, 128, 0, 128, 0, 128, 0, 0]
 
     img_np = np.array(img_pil)
     img_tensor_norm = norm_imagenet(img_pil, model_dims)
@@ -109,29 +112,30 @@ def predict_pil(model, img_pil, palette_path, model_dims):
     input_data = img_tensor_norm.unsqueeze(0)
 
     try:
-        print("Converted input image to cuda.")
-        prediction = model.predict(input_data.cuda())
+        # print("Converted input image to cuda.")
+        prediction = model.predict(input_data.to(device))
     except:
         print("Did not convert input image to cuda.")
         prediction = model.predict(input_data)
 
     prediction = pred_resize(prediction)
-    prediction = TF.to_pil_image(prediction.squeeze().cpu().round().int()).convert('P')
+    prediction = myutils.postprocessing_pred(prediction.squeeze().cpu().round().numpy().astype(np.uint8))
+    prediction = Image.fromarray(prediction).convert('P')
     prediction.putpalette(palette)
     return prediction
 
 
-def test_waterseg(args):
+def test_waterseg(model_path, test_path, test_name, out_path, device):
     """
     Tests either a single or an entire folder of images
     :param args: Command line args
     :return: None
     """
-    model = torch.load(args.model_path)
-    test_path = args.test_path
-    out_path = args.out_path
+    model = torch.load(model_path)
+    test_path = test_path
+    out_path = os.path.join(out_path, test_name)
 
-    mask_out = os.path.join(out_path, 'masks')
+    mask_out = os.path.join(out_path, 'mask')
     overlay_out = os.path.join(out_path, 'overlay')
     if not os.path.exists(mask_out):
         os.makedirs(mask_out)
@@ -139,11 +143,11 @@ def test_waterseg(args):
         os.makedirs(overlay_out)
 
     if os.path.isfile(test_path):
-        predict_one(test_path, model, args.palette_path, mask_out, overlay_out)
+        predict_one(test_path, model, mask_out, overlay_out, device)
     elif os.path.isdir(test_path):
         paths = glob(os.path.join(test_path, '*.jpg')) + glob(os.path.join(test_path, '*.png'))
-        for path in paths:
-            predict_one(path, model, args.palette_path, mask_out, overlay_out)
+        for path in tqdm(paths):
+            predict_one(path, model, mask_out, overlay_out, device)
     else:
         print("Error: Unknown path type:", test_path)
 
@@ -153,6 +157,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch WaterNet Model Testing')
     # Required: Path to the .pth file.
     parser.add_argument('--model_path',
+                        default='./records/link_efficientb4_model.pth',
                         type=str,
                         metavar='PATH',
                         help='Path to the model')
@@ -160,13 +165,18 @@ if __name__ == '__main__':
     parser.add_argument('--test_path',
                         type=str,
                         metavar='PATH',
+                        required=True,
                         help='Can point to folder or an individual jpg/png image')
-    # Optional: Defaults to the palette file in video_module/assets
-    parser.add_argument('--palette_path',
-                        default=DEFAULT_PALETTE,
+    parser.add_argument('--test_name',
                         type=str,
-                        metavar='PATH',
-                        help='(OPTIONAL) Path to palette file, defaults to file in video_module/assets')
+                        required=True,
+                        help='Test name')
+    # Optional: Defaults to the palette file in video_module/assets
+    # parser.add_argument('--palette_path',
+    #                     default=DEFAULT_PALETTE,
+    #                     type=str,
+    #                     metavar='PATH',
+    #                     help='(OPTIONAL) Path to palette file, defaults to file in video_module/assets')
     # Optional: Defaults to the output file in the project root/test_waterseg/<Date and Time at Runtime>
     # Produces two folders: 'masks' to contain the raw palette-based masks
     #                       'overlay' to contain an overlay
@@ -175,12 +185,13 @@ if __name__ == '__main__':
                         type=str,
                         metavar='PATH',
                         help='(OPTIONAL) Path to output folder, defaults to project root/output')
-    _args = parser.parse_args()
+    args = parser.parse_args()
 
     # Device
     device = torch.device('cpu')
     if torch.cuda.is_available():
         device = torch.device('cuda')
 
-    test_waterseg(_args)
-    print("Done.")
+    test_waterseg(args.model_path, args.test_path, args.test_name, args.out_path, device)
+
+    print(myutils.gct(), 'Test image segmentation done.')

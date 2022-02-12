@@ -7,10 +7,9 @@ from glob import glob
 
 import torch
 from torch.utils import data
-from tensorboardX import SummaryWriter
 
-from dataset import Water_Image_Train_DS
-from model import AFB_URR, FeatureBank
+from video_module.dataset import Water_Image_Train_DS
+from video_module.model import AFB_URR, FeatureBank
 import myutils
 
 
@@ -97,8 +96,6 @@ def main():
         desc = 'Water Images'
     else:
         raise ValueError(f'{args.level} is unknown.')
-
-
 
     dataloader = data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=2, pin_memory=True)
     print(myutils.gct(), f'Load level {args.level} dataset: {len(dataset)} training cases.')
@@ -211,14 +208,8 @@ if __name__ == '__main__':
         myutils.save_scripts(log_dir, scripts_to_save=glob('model/*.py', recursive=True))
         myutils.save_scripts(log_dir, scripts_to_save=glob('myutils/*.py', recursive=True))
 
-        vis_writer = SummaryWriter(log_path)
-        vis_writer_step = 0
-
         print(myutils.gct(), f'Create log dir: {log_dir}')
 
     main()
-
-    if args.log:
-        vis_writer.close()
 
     print(myutils.gct(), 'Training done.')

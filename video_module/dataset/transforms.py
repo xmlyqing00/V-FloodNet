@@ -170,8 +170,8 @@ class RandomAffine(object):
             PIL Image: Affine transformed image.
         """
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img.size)
-        img = TF.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor)
-        mask = TF.affine(mask, *ret, resample=Image.NEAREST, fillcolor=self.fillcolor)
+        img = TF.affine(img, *ret, interpolation=TF.InterpolationMode.BICUBIC, fill=self.fillcolor)
+        mask = TF.affine(mask, *ret, interpolation=TF.InterpolationMode.NEAREST, fill=self.fillcolor)
         return img, mask
 
     def __repr__(self):
@@ -367,8 +367,8 @@ class RandomResizedCrop(object):
         """
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
         # print(i, j, h, w)
-        img = TF.resized_crop(img, i, j, h, w, self.size, self.interpolation)
-        mask = TF.resized_crop(mask, i, j, h, w, self.size, Image.NEAREST)
+        img = TF.resized_crop(img, i, j, h, w, self.size, TF.InterpolationMode.BICUBIC)
+        mask = TF.resized_crop(mask, i, j, h, w, self.size, TF.InterpolationMode.NEAREST)
         return img, mask
 
     def __repr__(self):

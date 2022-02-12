@@ -8,7 +8,7 @@ import torch
 from torch.utils import data
 import torchvision.transforms as TF
 
-from dataset import transforms as mytrans
+from video_module.dataset import transforms as mytrans
 import myutils
 
 

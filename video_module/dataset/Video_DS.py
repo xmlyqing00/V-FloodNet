@@ -5,7 +5,7 @@ from glob import glob
 from torch.utils import data
 import torchvision.transforms as TF
 
-from dataset import transforms as mytrans
+from video_module.dataset import transforms as mytrans
 import myutils
 
 
@@ -39,37 +39,19 @@ class LongVideo_Test_DS(data.Dataset):
 
 class Video_DS(data.Dataset):
 
-    def __init__(self, img_dir, mask_dir, mask_list):
-        self.img_list = sorted(glob(os.path.join(img_dir, '*.jpg')) + glob(os.path.join(img_dir, '*.png')))
-
-        # print(self.img_list)
-
-        # first_frame = myutils.load_image_in_PIL(self.img_list[0])
-        # self.first_name = os.path.basename(self.img_list[0])[:-4]
-
-        self.masks = []
-        self.masks_idx = []
-        for i in range(len(self.img_list)):
-            img_name = os.path.basename(self.img_list[i][:-4])
-            if img_name in mask_list:
-                mask_path = os.path.join(mask_dir, img_name + '.png')
-                mask = myutils.load_image_in_PIL(mask_path, 'P')
-                self.masks.append(np.array(mask, np.uint8))
-                self.masks_idx.append(i)
-
-        self.obj_n = self.masks[0].max() + 1
-        # self.img_list = self.img_list[1:]
+    def __init__(self, img_list, first_frame, first_mask):
+        self.img_list = img_list[1:]
         self.video_len = len(self.img_list)
+
+        first_mask = np.array(first_mask, np.uint8) > 0
+        self.obj_n = first_mask.max() + 1
 
         self.to_tensor = TF.ToTensor()
         self.to_onehot = mytrans.ToOnehot(self.obj_n, shuffle=False)
 
-        self.mask_len = len(mask_list)
-        for i in range(self.mask_len):
-            mask, _ = self.to_onehot(self.masks[i])
-            self.masks[i] = mask[:self.obj_n]
-
-        # self.first_frame = self.to_tensor(first_frame)
+        mask, _ = self.to_onehot(first_mask)
+        self.first_mask = mask[:self.obj_n]
+        self.first_frame = self.to_tensor(first_frame)
 
     def __len__(self):
         return self.video_len
