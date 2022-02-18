@@ -82,3 +82,31 @@ class Water_Image_Train_DS(data.Dataset):
             'name': self.img_list[idx]
         }
         return frames, masks[:, :obj_n], obj_n, info
+
+
+
+class Video_DS(data.Dataset):
+
+    def __init__(self, img_list, first_frame, first_mask):
+        self.img_list = img_list[1:]
+        self.video_len = len(self.img_list)
+
+        first_mask = np.array(first_mask, np.uint8) > 0
+        self.obj_n = first_mask.max() + 1
+
+        self.to_tensor = TF.ToTensor()
+        self.to_onehot = mytrans.ToOnehot(self.obj_n, shuffle=False)
+
+        mask, _ = self.to_onehot(first_mask)
+        self.first_mask = mask[:self.obj_n]
+        self.first_frame = self.to_tensor(first_frame)
+
+    def __len__(self):
+        return self.video_len
+
+    def __getitem__(self, idx):
+        img = myutils.load_image_in_PIL(self.img_list[idx], 'RGB')
+        frame = self.to_tensor(img)
+        img_name = os.path.basename(self.img_list[idx])[:-4]
+
+        return frame, img_name

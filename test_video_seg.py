@@ -2,14 +2,12 @@ import numpy as np
 from tqdm import tqdm, trange
 import os
 import argparse
-from PIL import Image
 from glob import glob
 import torch
 from torch import utils
 from torch.nn import functional as F
 from torchvision.transforms import functional as TF
 from torchvision.transforms import InterpolationMode
-import subprocess
 
 from video_module.dataset import Video_DS
 from video_module.model import AFB_URR, FeatureBank
@@ -40,7 +38,7 @@ def get_args():
     return parser.parse_args()
 
 
-def main(args, device, palette):
+def main(args, device):
     model = AFB_URR(device, update_bank=True, load_imagenet_params=False)
     model = model.to(device)
     model.eval()
@@ -92,11 +90,11 @@ def main(args, device, palette):
 
     pred = torch.argmax(ori_first_mask[0], dim=0).cpu().numpy().astype(np.uint8)
     seg_path = os.path.join(seg_dir, f'{first_name}.png')
-    myutils.save_seg_mask(pred, seg_path, palette)
+    myutils.save_seg_mask(pred, seg_path, myutils.color_palette)
 
     if args.viz:
         overlay_path = os.path.join(overlay_dir, f'{first_name}.png')
-        myutils.save_overlay(ori_first_frame[0], pred, overlay_path, palette)
+        myutils.save_overlay(ori_first_frame[0], pred, overlay_path, myutils.color_palette)
 
     with torch.no_grad():
         k4_list, v4_list = model.memorize(first_frame, first_mask)
@@ -117,10 +115,10 @@ def main(args, device, palette):
             pred = torch.argmax(pred[0], dim=0).cpu().numpy().astype(np.uint8)
             pred = myutils.postprocessing_pred(pred)
             seg_path = os.path.join(seg_dir, f'{frame_name[0]}.png')
-            myutils.save_seg_mask(pred, seg_path, palette)
+            myutils.save_seg_mask(pred, seg_path, myutils.color_palette)
             if args.viz:
                 overlay_path = os.path.join(overlay_dir, f'{frame_name[0]}.png')
-                myutils.save_overlay(ori_frame[0], pred, overlay_path, palette)
+                myutils.save_overlay(ori_frame[0], pred, overlay_path, myutils.color_palette)
 
     fb.print_peak_mem()
 
@@ -137,8 +135,6 @@ if __name__ == '__main__':
 
     assert os.path.isdir(args.test_path)
 
-    palette = [0, 0, 0, 0, 0, 128, 0, 128, 0, 128, 0, 0]
-
-    main(args, device, palette)
+    main(args, device)
 
     print(myutils.gct(), 'Test video segmentation done.')

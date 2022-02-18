@@ -83,11 +83,11 @@ def predict_one(path, model, mask_outdir, overlay_outdir, device):
 
     basename = str(Path(os.path.basename(path)).stem)
     mask_savepth = os.path.join(mask_outdir, basename + '.png')
-    mask_save = prediction.convert('RGB')
-    mask_save.save(mask_savepth)
+    # mask_save = prediction.convert('RGB')
+    prediction.save(mask_savepth)
 
     over_savepth = os.path.join(overlay_outdir, basename + '.png')
-    overlay_np = np.array(img_pil) * 1 + np.array(mask_save) * 0.8
+    overlay_np = np.array(img_pil) * 1 + np.array(prediction.convert('RGB')) * 0.8
     overlay_np = overlay_np.clip(0, 255)
     Image.fromarray(overlay_np.astype(np.uint8)).save(over_savepth)
 
@@ -121,7 +121,7 @@ def predict_pil(model, img_pil, model_dims, device):
     prediction = pred_resize(prediction)
     prediction = myutils.postprocessing_pred(prediction.squeeze().cpu().round().numpy().astype(np.uint8))
     prediction = Image.fromarray(prediction).convert('P')
-    prediction.putpalette(palette)
+    prediction.putpalette(myutils.color_palette)
     return prediction
 
 

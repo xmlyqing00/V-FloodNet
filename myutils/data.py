@@ -11,6 +11,9 @@ from torch.nn import functional as NF
 from torchvision.transforms import functional as TF
 
 
+color_palette = [0, 0, 0, 0, 0, 128, 0, 128, 0, 128, 0, 0] + [0, 0, 0] * 252
+
+
 def postprocessing_pred(pred: np.array) -> np.array:
 
     label_cnt, labels = cv2.connectedComponentsWithAlgorithm(pred, 8, cv2.CV_32S, cv2.CCL_GRANA)
@@ -50,7 +53,7 @@ def save_seg_mask(pred, seg_path, palette):
     seg_img.save(seg_path)
 
 
-def add_overlay(img, mask, colors, alpha=0.7, cscale=1):
+def add_overlay(img, mask, colors, alpha=0.4, cscale=1):
 
     ids = np.unique(mask)
     img_overlay = img.copy()
