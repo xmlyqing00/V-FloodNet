@@ -47,9 +47,11 @@ if __name__ == '__main__':
     elif args.opt == 'ref':
         if 'houston' in args.test_name or 'LSU' in args.test_name:
             enable_tracker = False
+            enable_calib = False
         else:
             enable_tracker = True
-        est_by_reference(img_list, water_mask_list, out_dir, enable_tracker)
+            enable_calib = True
+        est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_calib)
     else:
         raise NotImplementedError(args.opt)
 

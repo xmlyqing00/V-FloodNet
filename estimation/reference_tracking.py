@@ -4,6 +4,7 @@ import myutils
 import os
 from datetime import datetime, timedelta
 from scipy.ndimage import gaussian_filter1d
+from tqdm import trange
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -17,10 +18,10 @@ pts_n = 4
 loop_flag = True
 water_label_id = 1
 
-time_fmt = mdates.DateFormatter('%H:%M')
-register_matplotlib_converters()
-fontsize = 36
-rotation = 90
+time_fmt = mdates.DateFormatter('%m-%d %H:%M')
+# register_matplotlib_converters()
+fontsize = 24
+rotation = 45
 
 
 def mouse_click(event, x, y, flags, param):
@@ -76,11 +77,10 @@ def get_video_homo(img_st_path, homo_mat_path):
     return homo_mat
 
 
-def get_video_ref(img_st_path, ref_bbox_path, enable_tracker):
-    ref_img = cv2.imread(img_st_path)
+def get_video_ref(ref_img, ref_bbox_path, enable_tracker):
 
     if os.path.exists(ref_bbox_path):
-        print('Load bbox of the reference objects.', ref_bbox_path)
+        print('Load bounding box of the reference object.', ref_bbox_path)
         ref_bbox = np.loadtxt(ref_bbox_path)
     else:
         track_window_name = 'Select A Rect As Reference Obj'
@@ -94,17 +94,18 @@ def get_video_ref(img_st_path, ref_bbox_path, enable_tracker):
 
     if enable_tracker:
         tracker = cv2.TrackerCSRT_create()
-        tracker.init(ref_img, ref_bbox)
+        tracker.init(ref_img, tuple(ref_bbox.astype(np.int)))
     else:
         tracker = None
 
     return ref_bbox, tracker
 
 
-def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker):
+def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_calib):
 
-    homo_mat_path = os.path.join(out_dir, 'homo_mat.txt')
-    homo_mat = get_video_homo(img_list[0], homo_mat_path)
+    if enable_calib:
+        homo_mat_path = os.path.join(out_dir, 'homo_mat.txt')
+        homo_mat = get_video_homo(img_list[0], homo_mat_path)
 
     ref_bbox_path = os.path.join(out_dir, 'ref_bbox.txt')
     ref_bbox = None
@@ -112,21 +113,25 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker):
     waterlevel_list = []
     timestamp_list = []
 
-    for img_path, water_mask_path in zip(img_list, water_mask_list):
+    viz_dir = os.path.join(out_dir, 'viz')
+    os.makedirs(viz_dir, exist_ok=True)
 
-        img = cv2.imread(img_path)
-        water_mask = np.asarray(myutils.load_image_in_PIL(water_mask_path, 'P'))
+    for i in trange(len(img_list)):
+
+        img = cv2.imread(img_list[i])
+        water_mask = np.asarray(myutils.load_image_in_PIL(water_mask_list[i], 'P'))
         img_size = (img.shape[1], img.shape[0])
-        img = cv2.warpPerspective(img, homo_mat, img_size)
-        water_mask = cv2.warpPerspective(water_mask, homo_mat, img_size)
+        if enable_calib:
+            img = cv2.warpPerspective(img, homo_mat, img_size)
+            water_mask = cv2.warpPerspective(water_mask, homo_mat, img_size)
 
         viz_img = myutils.add_overlay(img, water_mask, myutils.color_palette)
 
-        if not ref_bbox:
-            ref_bbox, tracker = get_video_ref(img_list[0], ref_bbox_path)
+        if ref_bbox is None:
+            ref_bbox, tracker = get_video_ref(img, ref_bbox_path, enable_tracker)
             waterlevel_list = [0]
 
-        img_name = os.path.basename(img_path)[:-4]
+        img_name = os.path.basename(img_list[i])[:-4]
         timestamp = datetime.strptime(img_name, '%Y-%m-%d-%H-%M-%S')
         timestamp_list.append(timestamp)
         # Get points of reference objs
@@ -148,12 +153,15 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker):
         waterlevel_list.append(waterlevel_list[-1])
         for y in range(key_pt[1] + 1, water_mask.shape[0]):
             if water_mask[y][key_pt[0]] == water_label_id:
-                waterlevel_list.append(y - key_pt[1])
-                cv2.line(viz_img, key_pt, (key_pt[0], y), (200, 0, 0), 2)
+                waterlevel_list[-1] = y - key_pt[1]
+                cv2.line(viz_img, key_pt, (key_pt[0], y), (0, 0, 200), 2)
                 break
+        
+        cv2.imwrite(os.path.join(viz_dir, f'{img_name}.png'), viz_img)
 
-    waterlevel_px = np.array(waterlevel_list)
-    waterlevel_px = -gaussian_filter1d(waterlevel_px, sigma=2, mode='nearest')
+    waterlevel_px = np.array(waterlevel_list[1:])
+    waterlevel_px = gaussian_filter1d(waterlevel_px, sigma=2, mode='nearest')
+    waterlevel_px = waterlevel_px[0] - waterlevel_px
 
     waterlevel_path = os.path.join(out_dir, 'waterlevel_px.npy')
     np.save(waterlevel_path, waterlevel_px)
@@ -165,19 +173,13 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker):
     # ax.legend(loc='lower right', fontsize=fontsize)
     ax.xaxis.set_major_formatter(time_fmt)
     ax.set_ylabel('Estimated Water Level (pixel)', fontsize=fontsize)
-    # tick_spacing = 3
+    # tick_spacing = 1
     # ticker_locator = mdates.MinuteLocator(tick_spacing)
     # ax.xaxis.set_major_locator(ticker_locator)
     plt.setp(ax.get_xticklabels(), rotation=rotation, ha='right', fontsize=fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=fontsize)
-    ax.legend(loc='lower right', fontsize=fontsize)
+    # ax.legend(loc='lower right', fontsize=fontsize)
 
     waterlevel_path = os.path.join(out_dir, 'waterlevel_px.png')
     fig.tight_layout()
     fig.savefig(waterlevel_path, dpi=300)
-
-    return np.array(waterlevel_list)
-
-
-
-
