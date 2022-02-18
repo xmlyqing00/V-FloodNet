@@ -43,9 +43,13 @@ if __name__ == '__main__':
     os.makedirs(out_dir, exist_ok=True)
 
     if args.opt in ['skeleton', 'stopsign']:
-        est_by_obj_detection(img_list, water_mask_list, out_dir, args.opt, args.is_video, device)
+        est_by_obj_detection(img_list, water_mask_list, out_dir, args.opt)
     elif args.opt == 'ref':
-        est_by_reference(img_list, water_mask_list, out_dir, args.is_video, device)
+        if 'houston' in args.test_name or 'LSU' in args.test_name:
+            enable_tracker = False
+        else:
+            enable_tracker = True
+        est_by_reference(img_list, water_mask_list, out_dir, enable_tracker)
     else:
         raise NotImplementedError(args.opt)
 

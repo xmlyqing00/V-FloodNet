@@ -261,7 +261,7 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
     return key_depths, viz_img
 
 
-def est_by_obj_detection(img_list, water_mask_list, out_dir, opt, is_video, device):
+def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
 
     if opt == 'stopsign':
         user_config = stopsign_config
