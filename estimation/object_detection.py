@@ -317,3 +317,24 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt, is_video, devi
         # pred_res_path = os.path.join(out_dir, img_name + '.pkl')
         # with open(pred_res_path, 'wb') as f:
         #     pickle.dump(pred_res, f)
+
+    #
+    # def calc_depth(self, key_centers, key_depths, h, w):
+    #     if len(key_centers) == 0:
+    #         return None
+    #     elif len(key_centers) == 1:
+    #         depth = np.ones((h, w)) * key_depths[0]
+    #         return depth
+    #     else:
+    #         key_centers = np.array(key_centers)
+    #         key_depths = np.array(key_depths)
+    #
+    #         p = np.stack(np.meshgrid(np.arange(w), np.arange(h)), axis=2).reshape(-1, 2)
+    #
+    #         d = cdist(p, key_centers, 'euclidean')
+    #         d = np.exp(-d / self.d_var)
+    #         d = d / d.sum(axis=1, keepdims=True)
+    #
+    #         depth = np.multiply(d, key_depths).sum(axis=1).reshape(h, w)
+    #
+    #         return depth
