@@ -24,7 +24,7 @@ skeleton_config = {
 }
 
 stopsign_meta = {
-  'size': 75,
+  'size': 76.2,
   'height_urban': 213.36,
   'height_rural': 182.88
 }
