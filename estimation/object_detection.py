@@ -7,7 +7,7 @@ from detectron2.engine.defaults import DefaultPredictor
 from detectron2.projects.point_rend import add_pointrend_config
 import numpy as np
 import torch
-import pickle
+import json
 
 import myutils
 
@@ -80,6 +80,7 @@ def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
     stopsign_d = []
     stopsign_pt = []
     stopsign_in_waters = []
+    raw_data_list = []
 
     for i in range(len(instances.pred_classes)):
         if instances.pred_classes[i] != 11:  # class index for stopsign
@@ -174,14 +175,18 @@ def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
         poles_bottom_pt = poles_bottom_arr.mean(axis=0)
         poles_bottom_d = myutils.dist(poles_bottom_pt, pt_bottom, axis=0)
         cos_ratio = (poles_bottom_pt[1] - pt_bottom[1]) / poles_bottom_d
+        raw_data_list.append({
+            'pole_top': (*pt_bottom, 1),
+            'pole_bottom': (*poles_bottom_pt, 1)
+        })
 
         # print(poles_bottom_pt)
 
-        px2cm = myutils.stopsign_meta['size'] / stopsign_h
+        px2cm = stopsign_meta['size'] / stopsign_h
         pole_d_cm = px2cm * poles_bottom_d
         pole_h_cm = pole_d_cm * cos_ratio
 
-        stopsign_in_water = max(0, myutils.stopsign_meta['height_urban'] - pole_h_cm)
+        stopsign_in_water = max(0, stopsign_meta['height_urban'] - pole_h_cm)
         stopsign_in_waters.append(stopsign_in_water)
         print('Est stopsign in water', stopsign_in_water, cos_ratio)
 
@@ -205,7 +210,7 @@ def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
     # depth = self.calc_depth(stopsign_pt, stopsign_d, h, w)
     # self.viz_dict['viz_img'] = viz_img
 
-    return stopsign_in_waters, viz_img
+    return stopsign_in_waters, viz_img, raw_data_list
 
 
 def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
@@ -217,6 +222,7 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
     bottom_region_area = 2 * (bottom_region_size ** 2)
     water_thres = 0.05
 
+    raw_data_list = []
     for keypoints_per_instance in pred_keypoints:
 
         max_depth_keypoint_name = None
@@ -224,8 +230,11 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
         max_depth_y = 0
         max_depth = 200
 
+        raw_data_dict = {}
         for i, keypoint in enumerate(keypoints_per_instance):
             x, y, prob = keypoint
+            raw_data_dict[keypoint_names[i]] = (x.item(), y.item(), prob.item())
+
             if prob < thres_keypoint:
                 continue
 
@@ -249,6 +258,8 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
                 max_depth_y = y
                 max_depth = skeleton_meta[keypoint_names[i]]
 
+        raw_data_list.append(raw_data_dict)
+
         if max_depth_keypoint_name:
             # key_centers.append([water_depth_x, water_depth_y])
             key_depths.append(max_depth)
@@ -258,7 +269,7 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
             cv2.putText(viz_img, text, text_pos, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 200), thickness=2)
             print('Est people in water', max_depth_keypoint_name, f'depth {max_depth}cm', 'pos', max_depth_x, max_depth_y)
 
-    return key_depths, viz_img
+    return key_depths, viz_img, raw_data_list
 
 
 def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
@@ -305,18 +316,16 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
         viz_img = myutils.add_overlay(visualizer.output.get_image(), water_mask, myutils.color_palette)
 
         if opt == 'stopsign':
-            waterlevels, viz_img = waterlevel_by_stopsign(img, instances, water_mask, viz_img)
+            waterlevels, viz_img, raw_data_list = waterlevel_by_stopsign(img, instances, water_mask, viz_img)
         else:
-            waterlevels, viz_img = waterlevel_by_skeleton(instances.pred_keypoints, water_mask, metadata.get('keypoint_names'), viz_img)
+            waterlevels, viz_img, raw_data_list = waterlevel_by_skeleton(instances.pred_keypoints, water_mask, metadata.get('keypoint_names'), viz_img)
 
         img_name = os.path.basename(img_path)[:-4]
         cv2.imwrite(os.path.join(out_dir, f'{img_name}.png'), viz_img)
 
-        #
-        #
-        # pred_res_path = os.path.join(out_dir, img_name + '.pkl')
-        # with open(pred_res_path, 'wb') as f:
-        #     pickle.dump(pred_res, f)
+        pred_res_path = os.path.join(out_dir, img_name + '.json')
+        with open(pred_res_path, 'w') as f:
+            json.dump(raw_data_list, f)
 
     #
     # def calc_depth(self, key_centers, key_depths, h, w):
