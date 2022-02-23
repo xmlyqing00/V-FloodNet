@@ -317,15 +317,23 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
 
         if opt == 'stopsign':
             waterlevels, viz_img, raw_data_list = waterlevel_by_stopsign(img, instances, water_mask, viz_img)
+            raw_data = {
+                'instances': raw_data_list,
+                'connection_rules': [('pole_top', 'pole_bottom', (100, 100, 100))]
+            }
         else:
-            waterlevels, viz_img, raw_data_list = waterlevel_by_skeleton(instances.pred_keypoints, water_mask, metadata.get('keypoint_names'), viz_img)
+            waterlevels, viz_img, raw_data_list = waterlevel_by_skeleton(instances.pred_keypoints, water_mask, metadata.get('keypoint_names'),  viz_img)
+            raw_data = {
+                'instances': raw_data_list,
+                'connection_rules': metadata.get('keypoint_connection_rules')
+            }
 
         img_name = os.path.basename(img_path)[:-4]
         cv2.imwrite(os.path.join(out_dir, f'{img_name}.png'), viz_img)
 
         pred_res_path = os.path.join(out_dir, img_name + '.json')
         with open(pred_res_path, 'w') as f:
-            json.dump(raw_data_list, f)
+            json.dump(raw_data, f)
 
     #
     # def calc_depth(self, key_centers, key_depths, h, w):
@@ -342,6 +350,7 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
     #
     #         d = cdist(p, key_centers, 'euclidean')
     #         d = np.exp(-d / self.d_var)
+
     #         d = d / d.sum(axis=1, keepdims=True)
     #
     #         depth = np.multiply(d, key_depths).sum(axis=1).reshape(h, w)
