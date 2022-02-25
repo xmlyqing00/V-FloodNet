@@ -11,7 +11,7 @@ from torch.nn import functional as NF
 from torchvision.transforms import functional as TF
 
 
-color_palette = [0, 0, 0, 0, 0, 128, 0, 128, 0, 128, 0, 0] + [0, 0, 0] * 252
+color_palette = [0, 0, 0, 0, 0, 128, 0, 128, 0, 128, 0, 0] + [100, 100, 100] * 252
 
 
 def postprocessing_pred(pred: np.array) -> np.array:

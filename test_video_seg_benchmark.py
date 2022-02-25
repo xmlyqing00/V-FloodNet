@@ -37,13 +37,11 @@ if __name__ == '__main__':
 
     assert os.path.isdir(args.benchmark_path)
 
-    palette = [0, 0, 0, 0, 0, 128, 0, 128, 0, 128, 0, 0]
-
-    test_list = glob(os.path.join(args.benchmark_path, '*/'))
+    test_list = sorted(glob(os.path.join(args.benchmark_path, '*/')))
     for test_path in test_list:
         test_name = test_path.split('/')[-2]
         args.test_name = test_name
         args.test_path = test_path
 
         print('Process video', test_name, 'from path', test_path)
-        main(args, device, palette)
+        main(args, device)
