@@ -1,11 +1,11 @@
 import os
 import numpy as np
 import cv2
+from glob import glob
 
-def cvt_video_series_to_images(video_path, out_frames_folder):
+def cvt_video_series_to_images(video_path, out_frames_dir):
     
-    if not os.path.exists(out_frames_folder):
-        os.makedirs(out_frames_folder)
+    os.makedirs(out_frames_dir, exist_ok=True)
 
     video = cv2.VideoCapture(video_path)
     cnt = 0
@@ -18,7 +18,7 @@ def cvt_video_series_to_images(video_path, out_frames_folder):
             break
 
         if cnt % stride == 0:
-            out_path = os.path.join(out_frames_folder, f'{cnt:05}.jpg')
+            out_path = os.path.join(out_frames_dir, f'{cnt:05}.jpg')
             cv2.imwrite(out_path, frame)
         
         cnt += 1
@@ -29,15 +29,15 @@ def cvt_video_series_to_images(video_path, out_frames_folder):
 
 if __name__ == '__main__':
 
-    root_folder = '/Ship01/Dataset/VOS/longvideo/Videos'
-    out_folder = '/Ship01/Dataset/VOS/longvideo/JPEGImages'
-    video_list = os.listdir(root_folder)
+    in_dir = '/home/gvc/Datasets/water2/University Lakes'
+    out_dir = '/home/gvc/Datasets/water2/test_university_lakes'
+    video_list = glob(os.path.join(in_dir, '*.MOV'))
     
-    for video_name in video_list:
+    for video_path in video_list:
 
-        video_path = os.path.join(root_folder, video_name)
-        out_frames_folder = os.path.join(out_folder, video_name[:-4])
+        video_name = os.path.basename(video_path)[:-4]
+        out_frames_dir = os.path.join(out_dir, video_name)
 
         print('Video series path:', video_name)
-        print('Out frames folder:', out_frames_folder)
-        cvt_video_series_to_images(video_path, out_frames_folder)
+        print('Out frames folder:', out_frames_dir)
+        cvt_video_series_to_images(video_path, out_frames_dir)

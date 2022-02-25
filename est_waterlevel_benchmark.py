@@ -1,56 +1,22 @@
 import argparse
 import os
 from glob import glob
-import torch
 
-from estimation.object_detection import est_by_obj_detection
-from estimation.reference_tracking import est_by_reference
+from est_waterlevel import main
 
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Estimate Water Level')
-    parser.add_argument('--gpu', type=int, default=0,
-                        help='GPU card id.')
-    parser.add_argument('--test_name', type=str, required=True,
-                        help='Name of the test video')
-    parser.add_argument('--water_mask_dir', type=str, default='./output', required=True,
+    parser.add_argument('--water_mask_dir_prefix', type=str, default='./output', required=True,
                         help='Path to the water mask folder.')
-    parser.add_argument('--img_dir', type=str, required=True,
-                        help='Input image directory.')
     parser.add_argument('--out_dir', default='output/waterlevel',
                         help='A file or directory to save output results.')
     parser.add_argument('--opt', type=str,
                         help='Estimation options.')
-    parser.add_argument('--is_video', action='store_true', default=False,
-                        help='Boolean flag for is video flag')
+    parser.add_argument('--benchmark_path', type=str, required=True,
+                        help='Benchmark Path')
 
     return parser.parse_args()
-
-
-def main(args):
-
-    # if args.gpu >= 0 and torch.cuda.is_available():
-    #     device = torch.device('cuda', args.gpu)
-    # else:
-    #     device = torch.device('cpu')
-
-    img_list = sorted(glob(os.path.join(args.img_dir, '*.jpg')) + glob(os.path.join(args.img_dir, '*.png')))
-    water_mask_list = sorted(glob(os.path.join(args.water_mask_dir, '*.png')))
-    out_dir = os.path.join(args.out_dir, f'{args.test_name}_{args.opt}')
-    os.makedirs(out_dir, exist_ok=True)
-
-    if args.opt in ['skeleton', 'stopsign']:
-        est_by_obj_detection(img_list, water_mask_list, out_dir, args.opt)
-    elif args.opt == 'ref':
-        if 'houston' in args.test_name or 'LSU' in args.test_name:
-            enable_tracker = False
-            enable_calib = False
-        else:
-            enable_tracker = True
-            enable_calib = True
-        est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_calib)
-    else:
-        raise NotImplementedError(args.opt)
 
 
 if __name__ == '__main__':
@@ -58,8 +24,16 @@ if __name__ == '__main__':
     args = get_parser()
     print(args)
 
-    main(args)
-    exit(0)
+    test_list = sorted(glob(os.path.join(args.benchmark_path, '*/')))
+    for test_path in test_list:
+        args.img_dir = test_path
+        test_name = test_path.split('/')[-2]
+        args.test_name = test_name
+        args.water_mask_dir = os.path.join(args.water_mask_dir_prefix, test_name, 'mask')
+
+        print('Process video', test_name, 'from path', test_path)
+        main(args)
+
     #
     # if args.img_dir[-1] == '/':
     #     args.img_dir = args.img_dir[:-1]
