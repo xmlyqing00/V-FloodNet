@@ -30,7 +30,7 @@ python3 est_waterlevel.py \
     --water_mask_dir=./output/test_image_seg/<test_name>/mask
     --opt=skeleton
 ```
-
+https://tidesandcurrents.noaa.gov/waterlevels.html?id=8443970&type=Tide+Data&name=Boston&state=MA
 
 <!-- 
 In the first part, we have two modules to segment the water region, the first one is the video module, and the second one is the image module.
