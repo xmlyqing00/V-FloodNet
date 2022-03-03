@@ -81,7 +81,7 @@ def get_video_ref(ref_img, ref_bbox_path, enable_tracker):
 
     if os.path.exists(ref_bbox_path):
         print('Load bounding box of the reference object.', ref_bbox_path)
-        ref_bbox = np.loadtxt(ref_bbox_path)
+        ref_bbox = tuple(np.loadtxt(ref_bbox_path).astype(np.int))
     else:
         track_window_name = 'Select A Rect As Reference Obj'
         while True:
@@ -94,7 +94,7 @@ def get_video_ref(ref_img, ref_bbox_path, enable_tracker):
 
     if enable_tracker:
         tracker = cv2.TrackerCSRT_create()
-        tracker.init(ref_img, tuple(ref_bbox.astype(np.int)))
+        tracker.init(ref_img, ref_bbox)
     else:
         tracker = None
 
@@ -161,7 +161,7 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_
 
     waterlevel_px = np.array(waterlevel_list[1:])
     waterlevel_px = gaussian_filter1d(waterlevel_px, sigma=2, mode='nearest')
-    waterlevel_px = waterlevel_px[0] - waterlevel_px
+    # waterlevel_px = waterlevel_px[0] - waterlevel_px
 
     waterlevel_path = os.path.join(out_dir, 'waterlevel_px.npy')
     np.save(waterlevel_path, waterlevel_px)
@@ -171,11 +171,19 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_
     ax.plot(timestamp_list, waterlevel_px, 'o')
 
     # ax.legend(loc='lower right', fontsize=fontsize)
-    ax.xaxis.set_major_formatter(time_fmt)
+
+    # ticks = ax.get_xticks()
+    # ticks_step = len(ticks) // 10
+    # ax.set_xticks(ticks[::ticks_step])
     ax.set_ylabel('Estimated Water Level (pixel)', fontsize=fontsize)
     # tick_spacing = 1
     # ticker_locator = mdates.MinuteLocator(tick_spacing)
-    # ax.xaxis.set_major_locator(ticker_locator)
+    ticker_locator = mdates.AutoDateLocator()
+    ticker_locator.intervald[mdates.HOURLY] = [4]
+    ticker_locator.intervald[mdates.MINUTELY] = [3]
+    ax.xaxis.set_major_locator(ticker_locator)
+    ax.xaxis.set_major_formatter(time_fmt)
+
     plt.setp(ax.get_xticklabels(), rotation=rotation, ha='right', fontsize=fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=fontsize)
     # ax.legend(loc='lower right', fontsize=fontsize)
