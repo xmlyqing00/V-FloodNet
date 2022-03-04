@@ -163,10 +163,10 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_
     waterlevel_px = gaussian_filter1d(waterlevel_px, sigma=2, mode='nearest')
     # waterlevel_px = waterlevel_px[0] - waterlevel_px
 
-    waterlevel_path = os.path.join(out_dir, 'waterlevel_px.npy')
+    waterlevel_path = os.path.join(out_dir, 'waterlevel-px.npy')
     np.save(waterlevel_path, waterlevel_px)
 
-    timestamp_list_path = os.path.join(out_dir, 'timestamp_list.npy')
+    timestamp_list_path = os.path.join(out_dir, 'timestamp-list.npy')
     np.save(timestamp_list_path, np.array(timestamp_list))
 
     fig = plt.figure(figsize=(20, 10))
@@ -191,6 +191,6 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_
     plt.setp(ax.get_yticklabels(), fontsize=fontsize)
     # ax.legend(loc='lower right', fontsize=fontsize)
 
-    waterlevel_path = os.path.join(out_dir, 'waterlevel_px.png')
+    waterlevel_path = os.path.join(out_dir, 'waterlevel-px.png')
     fig.tight_layout()
     fig.savefig(waterlevel_path, dpi=300)

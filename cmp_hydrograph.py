@@ -122,7 +122,7 @@ def get_parser():
 
 def main(args):
 
-    out_dir = os.path.join(args.out_dir, f'{args.test_name}_{args.opt}')
+    out_dir = os.path.join(args.out_dir, f'{args.test_name}-{args.opt}')
     gt_dir = './records/groundtruth'
 
     print('Load waterlevel-px.npy and timestamp-list.npy')
@@ -161,7 +161,7 @@ def main(args):
     else:
         raise NotImplementedError
 
-    waterlevel_meter = px_to_meter[:, 0:1] * waterlevel_px + px_to_meter[:, 1:2]
+    waterlevel_meter = px_to_meter[0] * waterlevel_px + px_to_meter[1]
 
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_subplot(111)
@@ -193,7 +193,7 @@ def main(args):
     plt.setp(ax.get_xticklabels(), rotation=rotation, ha='right', fontsize=fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=fontsize)
 
-    waterlevel_path = os.path.join(out_dir, 'waterlevel_meter.png')
+    waterlevel_path = os.path.join(out_dir, 'waterlevel-meter.png')
     print(waterlevel_path)
     fig.tight_layout()
     fig.savefig(waterlevel_path, dpi=200)
