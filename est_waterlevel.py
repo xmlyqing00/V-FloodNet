@@ -55,10 +55,10 @@ def main(args):
 
 if __name__ == '__main__':
 
-    args = get_parser()
-    print(args)
+    _args = get_parser()
+    print(_args)
 
-    main(args)
+    main(_args)
     exit(0)
     #
     # if args.img_dir[-1] == '/':
