@@ -11,18 +11,16 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Estimate Water Level')
     parser.add_argument('--gpu', type=int, default=0,
                         help='GPU card id.')
-    parser.add_argument('--test_name', type=str, required=True,
+    parser.add_argument('--test-name', type=str, required=True,
                         help='Name of the test video')
-    parser.add_argument('--water_mask_dir', type=str, default='./output', required=True,
+    parser.add_argument('--water-mask-dir', type=str, default='./output', required=True,
                         help='Path to the water mask folder.')
-    parser.add_argument('--img_dir', type=str, required=True,
+    parser.add_argument('--img-dir', type=str, required=True,
                         help='Input image directory.')
-    parser.add_argument('--out_dir', default='output/waterlevel',
+    parser.add_argument('--out-dir', default='output/waterlevel',
                         help='A file or directory to save output results.')
     parser.add_argument('--opt', type=str,
                         help='Estimation options.')
-    parser.add_argument('--is_video', action='store_true', default=False,
-                        help='Boolean flag for is video flag')
 
     return parser.parse_args()
 
@@ -36,7 +34,7 @@ def main(args):
 
     img_list = sorted(glob(os.path.join(args.img_dir, '*.jpg')) + glob(os.path.join(args.img_dir, '*.png')))
     water_mask_list = sorted(glob(os.path.join(args.water_mask_dir, '*.png')))
-    out_dir = os.path.join(args.out_dir, f'{args.test_name}_{args.opt}')
+    out_dir = os.path.join(args.out_dir, f'{args.test_name}-{args.opt}')
     os.makedirs(out_dir, exist_ok=True)
 
     if args.opt in ['skeleton', 'stopsign']:

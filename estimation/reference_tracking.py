@@ -104,10 +104,10 @@ def get_video_ref(ref_img, ref_bbox_path, enable_tracker):
 def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_calib):
 
     if enable_calib:
-        homo_mat_path = os.path.join(out_dir, 'homo_mat.txt')
+        homo_mat_path = os.path.join(out_dir, 'homo-mat.txt')
         homo_mat = get_video_homo(img_list[0], homo_mat_path)
 
-    ref_bbox_path = os.path.join(out_dir, 'ref_bbox.txt')
+    ref_bbox_path = os.path.join(out_dir, 'ref-bbox.txt')
     ref_bbox = None
 
     waterlevel_list = []
