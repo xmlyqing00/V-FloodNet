@@ -7,13 +7,13 @@ from est_waterlevel import main
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Estimate Water Level')
-    parser.add_argument('--water_mask_dir_prefix', type=str, default='./output', required=True,
+    parser.add_argument('--water-mask-dir-prefix', type=str, default='./output', required=True,
                         help='Path to the water mask folder.')
-    parser.add_argument('--out_dir', default='output/waterlevel',
+    parser.add_argument('--out-dir', default='output/waterlevel',
                         help='A file or directory to save output results.')
     parser.add_argument('--opt', type=str,
                         help='Estimation options.')
-    parser.add_argument('--benchmark_path', type=str, required=True,
+    parser.add_argument('--benchmark-path', type=str, required=True,
                         help='Benchmark Path')
 
     return parser.parse_args()

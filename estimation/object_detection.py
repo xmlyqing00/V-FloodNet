@@ -217,7 +217,7 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
 
     key_centers = []
     key_depths = []
-    thres_keypoint = 0.05
+    thres_keypoint = 0  # 0.05
     bottom_region_size = 15
     bottom_region_area = 2 * (bottom_region_size ** 2)
     water_thres = 0.05
@@ -235,8 +235,8 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
             x, y, prob = keypoint
             raw_data_dict[keypoint_names[i]] = (x.item(), y.item(), prob.item())
 
-            if prob < thres_keypoint:
-                continue
+            # if prob < thres_keypoint:
+            #     continue
 
             # x, y = int(x), int(y)
             # bottom_region_l = x - bottom_region_size
@@ -252,6 +252,9 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
             # if water_ratio < water_thres:
             #     continue
 
+            if water_mask:
+                cv2.circle(viz_img, (int(x.item()), int(y.item())), radius=2, color=(0, 200, 0), thickness=2)
+
             if not max_depth_keypoint_name or (max_depth > skeleton_meta[keypoint_names[i]]):
                 max_depth_keypoint_name = keypoint_names[i]
                 max_depth_x = x
@@ -260,7 +263,7 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
 
         raw_data_list.append(raw_data_dict)
 
-        if max_depth_keypoint_name:
+        if max_depth_keypoint_name and water_mask:
             # key_centers.append([water_depth_x, water_depth_y])
             key_depths.append(max_depth)
 
@@ -296,11 +299,16 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
     metadata = MetadataCatalog.get(cfg.DATASETS.TEST[0])
     det_model = DefaultPredictor(cfg)
 
-    for img_path, water_mask_path in zip(img_list, water_mask_list):
-
+    for i in range(len(img_list)):
+        img_path = img_list[i]
+        img_name = os.path.basename(img_path)[:-4]
         img = cv2.imread(img_path)
-        water_mask = np.asarray(myutils.load_image_in_PIL(water_mask_path, 'P'))
-        # water_mask = water_mask[..., np.newaxis]
+
+        try:
+            water_mask_path = water_mask_list[i]
+            water_mask = np.asarray(myutils.load_image_in_PIL(water_mask_path, 'P'))
+        except IndexError:
+            water_mask = None
 
         with torch.no_grad():
             pred_obj = det_model(img)
@@ -313,7 +321,10 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
             for keypoints_per_instance in instances.pred_keypoints:
                 visualizer.draw_and_connect_keypoints(keypoints_per_instance)
 
-        viz_img = myutils.add_overlay(visualizer.output.get_image(), water_mask, myutils.color_palette)
+        if water_mask:
+            viz_img = myutils.add_overlay(visualizer.output.get_image(), water_mask, myutils.color_palette)
+        else:
+            viz_img = visualizer.output.get_image()
 
         if opt == 'stopsign':
             waterlevels, viz_img, raw_data_list = waterlevel_by_stopsign(img, instances, water_mask, viz_img)
@@ -328,7 +339,6 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
                 'connection_rules': metadata.get('keypoint_connection_rules')
             }
 
-        img_name = os.path.basename(img_path)[:-4]
         cv2.imwrite(os.path.join(out_dir, f'{img_name}.png'), viz_img)
 
         pred_res_path = os.path.join(out_dir, img_name + '.json')
