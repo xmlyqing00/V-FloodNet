@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import pandas as pd
+
 import myutils
 import os
 from datetime import datetime, timedelta
@@ -77,31 +79,36 @@ def get_video_homo(img_st_path, homo_mat_path):
     return homo_mat
 
 
-def get_video_ref(ref_img, ref_bbox_path, enable_tracker):
+def get_video_ref(ref_img, ref_bbox_path, tracker_num, enable_tracker):
 
     if os.path.exists(ref_bbox_path):
         print('Load bounding box of the reference object.', ref_bbox_path)
-        ref_bbox = tuple(np.loadtxt(ref_bbox_path).astype(np.int))
+        ref_bbox = list(np.loadtxt(ref_bbox_path).astype(np.int))
     else:
         track_window_name = 'Select A Rect As Reference Obj'
-        while True:
-            bbox_st = cv2.selectROI(track_window_name, ref_img, fromCenter=False)
-            if bbox_st[2] > 0 and bbox_st[3] > 0:
-                break
+        ref_bbox = []
+        for t in range(tracker_num):
+            while True:
+                bbox_selected = cv2.selectROI(track_window_name, ref_img, fromCenter=False)
+                if bbox_selected[2] > 0 and bbox_selected[3] > 0:
+                    break
+            ref_bbox.append(bbox_selected)
         cv2.destroyWindow(track_window_name)
-        ref_bbox = bbox_st
         np.savetxt(ref_bbox_path, np.array(ref_bbox))
 
     if enable_tracker:
-        tracker = cv2.TrackerCSRT_create()
-        tracker.init(ref_img, ref_bbox)
+        tracker = cv2.legacy.MultiTracker_create()
+        for t in range(tracker_num):
+            tracker.add(cv2.TrackerCSRT_create(), ref_img, ref_bbox[i])
+        # tracker = cv2.TrackerCSRT_create()
+        # tracker.init(ref_img, ref_bbox)
     else:
         tracker = None
 
     return ref_bbox, tracker
 
 
-def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_calib):
+def est_by_reference(img_list, water_mask_list, out_dir, tracker_num, enable_tracker, enable_calib):
 
     if enable_calib:
         homo_mat_path = os.path.join(out_dir, 'homo_mat.txt')
@@ -128,7 +135,7 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_
         viz_img = myutils.add_overlay(img, water_mask, myutils.color_palette)
 
         if ref_bbox is None:
-            ref_bbox, tracker = get_video_ref(img, ref_bbox_path, enable_tracker)
+            ref_bbox, tracker = get_video_ref(img, ref_bbox_path, tracker_num, enable_tracker)
             waterlevel_list = [0]
 
         img_name = os.path.basename(img_list[i])[:-4]
@@ -161,13 +168,10 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_
 
     waterlevel_px = np.array(waterlevel_list[1:])
     waterlevel_px = gaussian_filter1d(waterlevel_px, sigma=2, mode='nearest')
-    # waterlevel_px = waterlevel_px[0] - waterlevel_px
 
-    waterlevel_path = os.path.join(out_dir, 'waterlevel_px.npy')
-    np.save(waterlevel_path, waterlevel_px)
-
-    timestamp_list_path = os.path.join(out_dir, 'timestamp_list.npy')
-    np.save(timestamp_list_path, np.array(timestamp_list))
+    waterlevel_path = os.path.join(out_dir, 'waterlevel.csv')
+    waterlevel_df = pd.DataFrame(waterlevel_px, index=timestamp_list, columns=['px'])
+    waterlevel_df.to_csv(waterlevel_path)
 
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_subplot(111)
@@ -183,7 +187,10 @@ def est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_
     # ticker_locator = mdates.MinuteLocator(tick_spacing)
     ticker_locator = mdates.AutoDateLocator()
     ticker_locator.intervald[mdates.HOURLY] = [4]
-    ticker_locator.intervald[mdates.MINUTELY] = [3]
+    if len(img_list) < 15:
+        ticker_locator.intervald[mdates.MINUTELY] = [1]
+    else:
+        ticker_locator.intervald[mdates.MINUTELY] = [3]
     ax.xaxis.set_major_locator(ticker_locator)
     ax.xaxis.set_major_formatter(time_fmt)
 

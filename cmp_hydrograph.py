@@ -122,52 +122,47 @@ def get_parser():
 
 def main(args):
 
-    out_dir = os.path.join(args.out_dir, f'{args.test_name}-{args.opt}')
+    out_dir = os.path.join(args.out_dir, f'{args.test_name}_{args.opt}')
     gt_dir = './records/groundtruth'
 
-    print('Load waterlevel_px.npy and timestamp_list.npy')
-    waterlevel_path = os.path.join(out_dir, 'waterlevel_px.npy')
-    waterlevel_px = np.load(waterlevel_path)
+    print('Load waterlevel.csv, gt.csv and px_to_meter.txt')
+    waterlevel_path = os.path.join(out_dir, 'waterlevel.csv')
+    waterlevel = pd.read_csv(waterlevel_path, index_col=0)
+    gt_csv = pd.read_csv(os.path.join(gt_dir, f'{args.test_name}_gt.csv'))
+    px_to_meter = np.loadtxt(os.path.join(gt_dir, f'{args.test_name}_px_to_meter.txt'))
 
-    timestamp_list_path = os.path.join(out_dir, 'timestamp_list.npy')
-    timestamp_list = np.load(timestamp_list_path, allow_pickle=True)
-
-    gt_path = os.path.join(gt_dir, f'{args.test_name}_gt.csv')
-    gt_csv = pd.read_csv(gt_path)
-
-    px_to_meter_path = os.path.join(gt_dir, f'{args.test_name}_px_to_meter.txt')
-    px_to_meter = np.loadtxt(px_to_meter_path)
-
+    metric_scale = 1
     if 'boston_harbor' in args.test_name:
         timestamp_list_gt = pd.to_datetime(gt_csv.iloc[:, 0] + ' ' + gt_csv.iloc[:, 1])
         timestamp_list_gt = timestamp_list_gt - timedelta(minutes=60)
         gt_col_id = 4
-        # tick_spacing = 6
-        # ticker_locator = ticker.MultipleLocator(tick_spacing)
-        # ticker_locator = mdates.HourLocator(interval=tick_spacing)
+        metric_scale = 100
+        ticker_locator = mdates.HourLocator(interval=6)
     elif 'houston' in args.test_name:
         timestamp_list_gt = pd.to_datetime(gt_csv.iloc[:, 0], format='%m/%d/%Y %H:%M')
         gt_col_id = 2
-        # tick_spacing = 6
-        # ticker_locator = ticker.MultipleLocator(tick_spacing)
-        # ticker_locator = mdates.HourLocator(interval=tick_spacing)
+        ticker_locator = mdates.HourLocator(interval=6)
     elif 'LSU' in args.test_name:
         timestamp_list_gt = pd.to_datetime(gt_csv.iloc[:, 0], errors='coerce', format='%Y-%m-%d-%H-%M-%S')
         gt_col_id = 1
-        # tick_spacing = len(time_arr_gt) // 10
-        # ticker_locator = ticker.MultipleLocator(tick_spacing)
-        # ticker_locator = mdates.HourLocator(interval=tick_spacing)
-        # ticker_locator = mdates.MinuteLocator(interval=tick_spacing)
+        if len(waterlevel.index) < 15:
+            ticker_locator = mdates.MinuteLocator(interval=1)
+        else:
+            ticker_locator = mdates.MinuteLocator(interval=3)
     else:
         raise NotImplementedError
 
-    waterlevel_meter = px_to_meter[0] * waterlevel_px + px_to_meter[1]
+    waterlevel[args.metric] = px_to_meter[0] * waterlevel['px'] + px_to_meter[1]
+    waterlevel.to_csv(waterlevel_path)
+    timestamp_list_est = pd.to_datetime(waterlevel.index)
 
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_subplot(111)
 
     # ax.plot(time_arr_gt, gt_csv.iloc[:, gt_col_id], '-', linewidth=3, label=f'Groundtruth')
-    ax.plot(timestamp_list_gt, gt_csv.iloc[:, gt_col_id], '^', markersize=15, label=f'Groundtruth')
+    ax.plot(timestamp_list_gt, gt_csv.iloc[:, gt_col_id] * metric_scale, '^', markersize=15, label=f'Groundtruth')
+    print('Groundtruth', gt_csv.iloc[:, gt_col_id])
+    print('Water level pixel', waterlevel['px'])
 
     # for i in range(waterlevel_px.shape[0]):
     #     ax.plot(time_arr_eval, waterlevel_px[i, :], '.', label=f'By ref {i} (ft)')
@@ -175,26 +170,22 @@ def main(args):
     if 'houston' in args.test_name:
         # ax.plot(time_arr_eval, waterlevel_meter[0], '-', linewidth=3, label=f'Est Water Level0 (m)')
         # ax.plot(time_arr_eval, waterlevel_meter[1], '-', linewidth=3, label=f'Est Water Level1 (m)')
-        ax.plot(timestamp_list, waterlevel_meter, '-', linewidth=3, label=f'Est Water Level')
+        ax.plot(timestamp_list_est, waterlevel[args.metric], '-', linewidth=3, label=f'Estimated {args.type}')
         old_col_id = 5
-        ax.plot(timestamp_list, gt_csv.iloc[:, old_col_id], '-', linewidth=3, label=f'LSUSeg Water Level')
+        ax.plot(timestamp_list_est, gt_csv.iloc[:, old_col_id], '-', linewidth=3, label=f'LSUSeg {args.type}')
         ax.axhline(y=10.3, linestyle='--')
         ax.legend(loc='upper right', fontsize=fontsize)
     else:
-        ax.plot(timestamp_list, waterlevel_meter, 'o', markersize=15, label=f'Est Water Level')
+        ax.plot(timestamp_list_est, waterlevel[args.metric], 'o', markersize=15, label=f'Estimated {args.type}')
         ax.legend(loc='lower right', fontsize=fontsize)
 
-    ticker_locator = mdates.AutoDateLocator()
-    ticker_locator.intervald[mdates.HOURLY] = [4]
-    ticker_locator.intervald[mdates.MINUTELY] = [3]
     ax.xaxis.set_major_locator(ticker_locator)
     ax.xaxis.set_major_formatter(time_fmt)
-    ax.set_ylabel('Water Level (meter)', fontsize=fontsize)
+    ax.set_ylabel(f'{args.type} ({args.metric})', fontsize=fontsize)
     plt.setp(ax.get_xticklabels(), rotation=rotation, ha='right', fontsize=fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=fontsize)
 
-    waterlevel_path = os.path.join(out_dir, 'waterlevel_meter.png')
-    print(waterlevel_path)
+    waterlevel_path = os.path.join(out_dir, f'waterlevel_{args.metric}.png')
     fig.tight_layout()
     fig.savefig(waterlevel_path, dpi=200)
 
@@ -205,6 +196,15 @@ if __name__ == '__main__':
 
     _args = get_parser()
     _args.opt = 'ref'
+    if 'LSU' in _args.test_name:
+        _args.type = 'Water Depth'
+    elif 'boston' in _args.test_name or 'houston' in _args.test_name:
+        _args.type = 'Water Level'
+
+    if 'houston' in _args.test_name:
+        _args.metric = 'meter'
+    else:
+        _args.metric = 'centimeter'
     print(_args)
 
     main(_args)

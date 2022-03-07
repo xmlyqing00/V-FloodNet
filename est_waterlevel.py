@@ -40,13 +40,20 @@ def main(args):
     if args.opt in ['skeleton', 'stopsign']:
         est_by_obj_detection(img_list, water_mask_list, out_dir, args.opt)
     elif args.opt == 'ref':
-        if 'houston' in args.test_name or 'LSU' in args.test_name:
+        if 'houston' in args.test_name:
             enable_tracker = False
             enable_calib = False
-        else:
+            tracker_num = 2
+        elif 'LSU' in args.test_name:
+            enable_tracker = False
+            enable_calib = False
+            tracker_num = 1
+        elif 'boston' in args.test_name:
             enable_tracker = True
             enable_calib = True
-        est_by_reference(img_list, water_mask_list, out_dir, enable_tracker, enable_calib)
+            tracker_num = 2
+
+        est_by_reference(img_list, water_mask_list, out_dir, tracker_num, enable_tracker, enable_calib)
     else:
         raise NotImplementedError(args.opt)
 
