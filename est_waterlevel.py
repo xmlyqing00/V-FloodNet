@@ -34,7 +34,7 @@ def main(args):
 
     img_list = sorted(glob(os.path.join(args.img_dir, '*.jpg')) + glob(os.path.join(args.img_dir, '*.png')))
     water_mask_list = sorted(glob(os.path.join(args.water_mask_dir, '*.png')))
-    out_dir = os.path.join(args.out_dir, f'{args.test_name}-{args.opt}')
+    out_dir = os.path.join(args.out_dir, f'{args.test_name}_{args.opt}')
     os.makedirs(out_dir, exist_ok=True)
 
     if args.opt in ['skeleton', 'stopsign']:

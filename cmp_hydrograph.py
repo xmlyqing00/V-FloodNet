@@ -125,17 +125,17 @@ def main(args):
     out_dir = os.path.join(args.out_dir, f'{args.test_name}-{args.opt}')
     gt_dir = './records/groundtruth'
 
-    print('Load waterlevel-px.npy and timestamp-list.npy')
-    waterlevel_path = os.path.join(out_dir, 'waterlevel-px.npy')
+    print('Load waterlevel_px.npy and timestamp_list.npy')
+    waterlevel_path = os.path.join(out_dir, 'waterlevel_px.npy')
     waterlevel_px = np.load(waterlevel_path)
 
-    timestamp_list_path = os.path.join(out_dir, 'timestamp-list.npy')
+    timestamp_list_path = os.path.join(out_dir, 'timestamp_list.npy')
     timestamp_list = np.load(timestamp_list_path, allow_pickle=True)
 
-    gt_path = os.path.join(gt_dir, f'{args.test_name}-gt.csv')
+    gt_path = os.path.join(gt_dir, f'{args.test_name}_gt.csv')
     gt_csv = pd.read_csv(gt_path)
 
-    px_to_meter_path = os.path.join(gt_dir, f'{args.test_name}-px-to-meter.txt')
+    px_to_meter_path = os.path.join(gt_dir, f'{args.test_name}_px_to_meter.txt')
     px_to_meter = np.loadtxt(px_to_meter_path)
 
     if 'boston_harbor' in args.test_name:
@@ -193,7 +193,7 @@ def main(args):
     plt.setp(ax.get_xticklabels(), rotation=rotation, ha='right', fontsize=fontsize)
     plt.setp(ax.get_yticklabels(), fontsize=fontsize)
 
-    waterlevel_path = os.path.join(out_dir, 'waterlevel-meter.png')
+    waterlevel_path = os.path.join(out_dir, 'waterlevel_meter.png')
     print(waterlevel_path)
     fig.tight_layout()
     fig.savefig(waterlevel_path, dpi=200)
