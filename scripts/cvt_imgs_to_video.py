@@ -1,8 +1,22 @@
+import argparse
 import cv2
 import numpy as np
 import os
 from glob import glob
 from tqdm import trange
+
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(description='Convert images to videos.')
+    parser.add_argument('--img-dir', type=str, required=True,
+                        help='Path to the input image')
+    parser.add_argument('--outdir', type=str, default='../output/videos',
+                        help='Path to the input image')
+    parser.add_argument('--video-name', type=str, required=True,
+                        help='Name of the test video')
+    args = parser.parse_args()
+    return args
 
 
 def cvt_images_to_video(image_folder,
@@ -17,13 +31,13 @@ def cvt_images_to_video(image_folder,
     if not os.path.exists(video_dir):
         os.makedirs(video_dir)
 
-    video_path = os.path.join(video_dir, video_name)
+    video_path = os.path.join(video_dir, f'{video_name}.mp4')
 
-    img_list = glob(os.path.join(image_folder, '*.png'))
+    img_list = glob(os.path.join(image_folder, '*.png')) + glob(os.path.join(image_folder, '*.jpg'))
     if len(img_list) == 0:
         exit(-1)
     img_list.sort(key=lambda x: (len(x), x))
-    img_list = img_list[3:]
+    # img_list = img_list[3:]
 
     if video_len == -1:
         end = len(img_list)
@@ -47,16 +61,10 @@ def cvt_images_to_video(image_folder,
 
 
 if __name__ == '__main__':
-    img_folder = '/Ship03/Sources/WaterNetV3/output/waterlevel/boston_harbor_20190121_20190123_day_s_label_1'
-    img_folder = '/Ship03/Sources/WaterNetV3/output/waterlevel/houston_buffalo_20170825_20170901_s_label_1'
-    img_folder = '/Ship03/Sources/WaterNetV3/output/waterlevel/boston_harbor_20190121_20190123_day_s_label_1'
-    img_folder = '/Ship03/Sources/WaterNetV3/output/waterlevel/LSU-20200526_label_1'
-    video_dir = 'output/videos'
-    video_name = 'LSU-20200526-Label-1.mp4'
+    args = get_parser()
     video_len = -1
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     stride = 1
     fps = 3
 
-
-    cvt_images_to_video(img_folder, video_dir, video_name, video_len, fourcc, stride, fps=fps)
+    cvt_images_to_video(args.img_dir, args.out_dir, args.video_name, video_len, fourcc, stride, fps=fps)
