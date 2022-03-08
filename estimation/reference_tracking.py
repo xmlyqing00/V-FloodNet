@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import pandas as pd
+import copy
+import warnings
 
 import myutils
 import os
@@ -84,10 +86,13 @@ def get_video_ref(ref_img, ref_bbox_path, tracker_num, enable_tracker):
     if os.path.exists(ref_bbox_path):
         print('Load bounding box of the reference object.', ref_bbox_path)
         ref_bbox = list(np.loadtxt(ref_bbox_path).astype(np.int))
+        if tracker_num == 1:
+            ref_bbox = [ref_bbox]
     else:
         track_window_name = 'Select A Rect As Reference Obj'
         ref_bbox = []
         for t in range(tracker_num):
+            print(f'Select the bounding box for the Ref {t}.')
             while True:
                 bbox_selected = cv2.selectROI(track_window_name, ref_img, fromCenter=False)
                 if bbox_selected[2] > 0 and bbox_selected[3] > 0:
@@ -117,7 +122,7 @@ def est_by_reference(img_list, water_mask_list, out_dir, test_name):
     elif 'boston' in test_name:
         enable_tracker = True
         enable_calib = True
-        tracker_num = 2
+        tracker_num = 1
         ticker_locator = mdates.HourLocator(interval=6)
     elif 'LSU' in test_name:
         enable_tracker = False
@@ -156,7 +161,7 @@ def est_by_reference(img_list, water_mask_list, out_dir, test_name):
 
         if ref_bbox is None:
             ref_bbox, tracker = get_video_ref(img, ref_bbox_path, tracker_num, enable_tracker)
-            waterlevel_list = [[0, 0]]
+            waterlevel_list = [[0 for _ in range(tracker_num)]]
 
         img_name = os.path.basename(img_list[i])[:-4]
         timestamp = datetime.strptime(img_name, '%Y-%m-%d-%H-%M-%S')
@@ -167,42 +172,46 @@ def est_by_reference(img_list, water_mask_list, out_dir, test_name):
             tracker_flags, bbox = tracker.update(img)
             if tracker_flags:
                 ref_bbox = bbox
+            else:
+                warnings.warn(f'Tracker failed at frame {img_name}.')
 
-        waterlevel_est = waterlevel_list[-1]
-        for i in range(tracker_num):
-            x, y, w, h = [int(v) for v in ref_bbox[i]]
+        waterlevel_est = copy.deepcopy(waterlevel_list[-1])
+        for t in range(tracker_num):
+            x, y, w, h = [int(v) for v in ref_bbox[t]]
             cv2.rectangle(viz_img, (x, y), (x + w, y + h), (0, 200, 0), 2)
 
             key_pt = (int(x + w / 2), int(y + h))
 
             for y in range(key_pt[1] + 1, water_mask.shape[0]):
                 if water_mask[y][key_pt[0]] == water_label_id:
-                    waterlevel_est[i] = y - key_pt[1]
-                    cv2.line(viz_img, key_pt, (key_pt[0], y), (0, 0, 200), 2)
+                    waterlevel_est[t] = y - key_pt[1]
+                    if waterlevel_est[t] == 1:
+                        waterlevel_est[t] = np.NaN
+                    else:
+                        cv2.line(viz_img, key_pt, (key_pt[0], y), (0, 0, 200), 2)
                     break
 
-        print(waterlevel_est)
         waterlevel_list.append(waterlevel_est)
         cv2.imwrite(os.path.join(viz_dir, f'{img_name}.png'), viz_img)
 
     waterlevel_px = np.array(waterlevel_list[1:])
     column_names = []
     for i in range(tracker_num):
-        waterlevel_px[i] = gaussian_filter1d(waterlevel_px[i], sigma=2, mode='nearest')
-        column_names.append(f'est{i}_px')
+        waterlevel_px[:, i] = gaussian_filter1d(waterlevel_px[:, i], sigma=2, mode='nearest')
+        column_names.append(f'est_ref{i}_px')
 
     waterlevel_path = os.path.join(out_dir, 'waterlevel.csv')
     waterlevel_df = pd.DataFrame(waterlevel_px, index=timestamp_list, columns=column_names)
-    waterlevel_df['est_avg_px'] = np.mean(waterlevel_px, axis=1)
+    waterlevel_df['est_avg_px'] = np.nanmean(waterlevel_px, axis=1)
     waterlevel_df.to_csv(waterlevel_path)
 
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_subplot(111)
 
-    ax.plot(timestamp_list, waterlevel_px, 'o', labels='Average')
+    ax.plot(timestamp_list, waterlevel_df['est_avg_px'], 'o', label='Average')
     if tracker_num > 1:
         for i in range(tracker_num):
-            ax.plot(timestamp_list, waterlevel_px[i], 'o', labels=f'Estimate by ref {i}')
+            ax.plot(timestamp_list, waterlevel_df[f'est_ref{i}_px'], 'o', label=f'Estimate by ref {i}')
         ax.legend(loc='lower right', fontsize=fontsize)
 
     ax.set_ylabel('Estimated Water Level (pixel)', fontsize=fontsize)
