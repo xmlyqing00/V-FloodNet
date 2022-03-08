@@ -152,7 +152,7 @@ def main(args):
     else:
         raise NotImplementedError
 
-    waterlevel[args.metric] = px_to_meter[0] * waterlevel['px'] + px_to_meter[1]
+    waterlevel[args.metric] = px_to_meter[0] * waterlevel['est_avg_px'] + px_to_meter[1]
     waterlevel.to_csv(waterlevel_path)
     timestamp_list_est = pd.to_datetime(waterlevel.index)
 
@@ -162,7 +162,7 @@ def main(args):
     # ax.plot(time_arr_gt, gt_csv.iloc[:, gt_col_id], '-', linewidth=3, label=f'Groundtruth')
     ax.plot(timestamp_list_gt, gt_csv.iloc[:, gt_col_id] * metric_scale, '^', markersize=15, label=f'Groundtruth')
     print('Groundtruth', gt_csv.iloc[:, gt_col_id])
-    print('Water level pixel', waterlevel['px'])
+    print('Water level pixel', waterlevel['est_avg_px'])
 
     # for i in range(waterlevel_px.shape[0]):
     #     ax.plot(time_arr_eval, waterlevel_px[i, :], '.', label=f'By ref {i} (ft)')

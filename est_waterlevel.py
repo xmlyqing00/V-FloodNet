@@ -9,8 +9,8 @@ from estimation.reference_tracking import est_by_reference
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Estimate Water Level')
-    parser.add_argument('--gpu', type=int, default=0,
-                        help='GPU card id.')
+    # parser.add_argument('--gpu', type=int, default=0,
+    #                     help='GPU card id.')
     parser.add_argument('--test-name', type=str, required=True,
                         help='Name of the test video')
     parser.add_argument('--water-mask-dir', type=str, default='./output',
@@ -40,20 +40,7 @@ def main(args):
     if args.opt in ['skeleton', 'stopsign']:
         est_by_obj_detection(img_list, water_mask_list, out_dir, args.opt)
     elif args.opt == 'ref':
-        if 'houston' in args.test_name:
-            enable_tracker = False
-            enable_calib = False
-            tracker_num = 2
-        elif 'LSU' in args.test_name:
-            enable_tracker = False
-            enable_calib = False
-            tracker_num = 1
-        elif 'boston' in args.test_name:
-            enable_tracker = True
-            enable_calib = True
-            tracker_num = 2
-
-        est_by_reference(img_list, water_mask_list, out_dir, tracker_num, enable_tracker, enable_calib)
+        est_by_reference(img_list, water_mask_list, out_dir, args.test_name)
     else:
         raise NotImplementedError(args.opt)
 

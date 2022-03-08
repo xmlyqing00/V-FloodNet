@@ -73,7 +73,7 @@ def get_video_homo(img_st_path, homo_mat_path):
     pts_t = np.float32(pts_t)
     homo_mat, _ = cv2.findHomography(pts, pts_t)
 
-    np.savetxt(homo_mat_path, homo_mat)
+    np.savetxt(homo_mat_path, homo_mat, '%.4f')
     cv2.destroyWindow(rectify_window_name)
 
     return homo_mat
@@ -94,12 +94,12 @@ def get_video_ref(ref_img, ref_bbox_path, tracker_num, enable_tracker):
                     break
             ref_bbox.append(bbox_selected)
         cv2.destroyWindow(track_window_name)
-        np.savetxt(ref_bbox_path, np.array(ref_bbox))
+        np.savetxt(ref_bbox_path, np.array(ref_bbox), '%.4f')
 
     if enable_tracker:
         tracker = cv2.legacy.MultiTracker_create()
-        for t in range(tracker_num):
-            tracker.add(cv2.TrackerCSRT_create(), ref_img, ref_bbox[i])
+        for i in range(tracker_num):
+            tracker.add(cv2.legacy.TrackerCSRT_create(), ref_img, ref_bbox[i])
         # tracker = cv2.TrackerCSRT_create()
         # tracker.init(ref_img, ref_bbox)
     else:
@@ -108,7 +108,27 @@ def get_video_ref(ref_img, ref_bbox_path, tracker_num, enable_tracker):
     return ref_bbox, tracker
 
 
-def est_by_reference(img_list, water_mask_list, out_dir, tracker_num, enable_tracker, enable_calib):
+def est_by_reference(img_list, water_mask_list, out_dir, test_name):
+    if 'houston' in test_name:
+        enable_tracker = False
+        enable_calib = False
+        tracker_num = 2
+        ticker_locator = mdates.HourLocator(interval=6)
+    elif 'boston' in test_name:
+        enable_tracker = True
+        enable_calib = True
+        tracker_num = 2
+        ticker_locator = mdates.HourLocator(interval=6)
+    elif 'LSU' in test_name:
+        enable_tracker = False
+        enable_calib = False
+        tracker_num = 1
+        if len(img_list) < 15:
+            ticker_locator = mdates.MinuteLocator(interval=3)
+        else:
+            ticker_locator = mdates.MinuteLocator(interval=3)
+    else:
+        raise NotImplementedError
 
     if enable_calib:
         homo_mat_path = os.path.join(out_dir, 'homo_mat.txt')
@@ -136,7 +156,7 @@ def est_by_reference(img_list, water_mask_list, out_dir, tracker_num, enable_tra
 
         if ref_bbox is None:
             ref_bbox, tracker = get_video_ref(img, ref_bbox_path, tracker_num, enable_tracker)
-            waterlevel_list = [0]
+            waterlevel_list = [[0, 0]]
 
         img_name = os.path.basename(img_list[i])[:-4]
         timestamp = datetime.strptime(img_name, '%Y-%m-%d-%H-%M-%S')
@@ -144,53 +164,48 @@ def est_by_reference(img_list, water_mask_list, out_dir, tracker_num, enable_tra
         # Get points of reference objs
 
         if enable_tracker:
-            tracker_flag, bbox = tracker.update(img)
-            if tracker_flag:
+            tracker_flags, bbox = tracker.update(img)
+            if tracker_flags:
                 ref_bbox = bbox
-            else:
-                bbox = ref_bbox
-        else:
-            bbox = ref_bbox
 
-        x, y, w, h = [int(v) for v in bbox]
-        cv2.rectangle(viz_img, (x, y), (x + w, y + h), (0, 200, 0), 2)
+        waterlevel_est = waterlevel_list[-1]
+        for i in range(tracker_num):
+            x, y, w, h = [int(v) for v in ref_bbox[i]]
+            cv2.rectangle(viz_img, (x, y), (x + w, y + h), (0, 200, 0), 2)
 
-        key_pt = (int(x + w / 2), int(y + h))
+            key_pt = (int(x + w / 2), int(y + h))
 
-        waterlevel_list.append(waterlevel_list[-1])
-        for y in range(key_pt[1] + 1, water_mask.shape[0]):
-            if water_mask[y][key_pt[0]] == water_label_id:
-                waterlevel_list[-1] = y - key_pt[1]
-                cv2.line(viz_img, key_pt, (key_pt[0], y), (0, 0, 200), 2)
-                break
-        
+            for y in range(key_pt[1] + 1, water_mask.shape[0]):
+                if water_mask[y][key_pt[0]] == water_label_id:
+                    waterlevel_est[i] = y - key_pt[1]
+                    cv2.line(viz_img, key_pt, (key_pt[0], y), (0, 0, 200), 2)
+                    break
+
+        print(waterlevel_est)
+        waterlevel_list.append(waterlevel_est)
         cv2.imwrite(os.path.join(viz_dir, f'{img_name}.png'), viz_img)
 
     waterlevel_px = np.array(waterlevel_list[1:])
-    waterlevel_px = gaussian_filter1d(waterlevel_px, sigma=2, mode='nearest')
+    column_names = []
+    for i in range(tracker_num):
+        waterlevel_px[i] = gaussian_filter1d(waterlevel_px[i], sigma=2, mode='nearest')
+        column_names.append(f'est{i}_px')
 
     waterlevel_path = os.path.join(out_dir, 'waterlevel.csv')
-    waterlevel_df = pd.DataFrame(waterlevel_px, index=timestamp_list, columns=['px'])
+    waterlevel_df = pd.DataFrame(waterlevel_px, index=timestamp_list, columns=column_names)
+    waterlevel_df['est_avg_px'] = np.mean(waterlevel_px, axis=1)
     waterlevel_df.to_csv(waterlevel_path)
 
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_subplot(111)
-    ax.plot(timestamp_list, waterlevel_px, 'o')
 
-    # ax.legend(loc='lower right', fontsize=fontsize)
+    ax.plot(timestamp_list, waterlevel_px, 'o', labels='Average')
+    if tracker_num > 1:
+        for i in range(tracker_num):
+            ax.plot(timestamp_list, waterlevel_px[i], 'o', labels=f'Estimate by ref {i}')
+        ax.legend(loc='lower right', fontsize=fontsize)
 
-    # ticks = ax.get_xticks()
-    # ticks_step = len(ticks) // 10
-    # ax.set_xticks(ticks[::ticks_step])
     ax.set_ylabel('Estimated Water Level (pixel)', fontsize=fontsize)
-    # tick_spacing = 1
-    # ticker_locator = mdates.MinuteLocator(tick_spacing)
-    ticker_locator = mdates.AutoDateLocator()
-    ticker_locator.intervald[mdates.HOURLY] = [4]
-    if len(img_list) < 15:
-        ticker_locator.intervald[mdates.MINUTELY] = [1]
-    else:
-        ticker_locator.intervald[mdates.MINUTELY] = [3]
     ax.xaxis.set_major_locator(ticker_locator)
     ax.xaxis.set_major_formatter(time_fmt)
 
