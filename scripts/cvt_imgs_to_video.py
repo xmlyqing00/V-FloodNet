@@ -11,7 +11,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Convert images to videos.')
     parser.add_argument('--img-dir', type=str, required=True,
                         help='Path to the input image')
-    parser.add_argument('--outdir', type=str, default='../output/videos',
+    parser.add_argument('--out-dir', type=str, default='../output/videos',
                         help='Path to the input image')
     parser.add_argument('--video-name', type=str, required=True,
                         help='Name of the test video')
@@ -43,16 +43,14 @@ def cvt_images_to_video(image_folder,
         end = len(img_list)
     else:
         end = min(int(start + fps * video_len), len(img_list))
-    first_image_path = os.path.join(image_folder, img_list[0])
-    first_image = cv2.imread(first_image_path)
+    first_image = cv2.imread(img_list[0])
     height, width, channels = first_image.shape
     video = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
 
     stride = max(0, int(stride))
 
     for image_idx in trange(start, end, stride):
-        image_path = os.path.join(image_folder, img_list[image_idx])
-        image = cv2.imread(image_path)
+        image = cv2.imread(img_list[image_idx])
         video.write(image)
 
     video.release()
@@ -65,6 +63,13 @@ if __name__ == '__main__':
     video_len = -1
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     stride = 1
-    fps = 3
+    if 'houston' in args.video_name:
+        fps = 120
+    elif 'boston_harbor' in args.video_name:
+        fps = 15
+    elif 'LSU' in args.video_name:
+        fps = 3
+    else:
+        fps = 3
 
     cvt_images_to_video(args.img_dir, args.out_dir, args.video_name, video_len, fourcc, stride, fps=fps)
