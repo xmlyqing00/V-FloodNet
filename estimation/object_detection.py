@@ -5,6 +5,7 @@ from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.engine.defaults import DefaultPredictor
 from detectron2.projects.point_rend import add_pointrend_config
+from detectron2.structures import Instances
 import numpy as np
 import torch
 import json
@@ -24,7 +25,7 @@ skeleton_config = {
 }
 
 stopsign_meta = {
-  'size': 76.2,
+  'size': 91,
   'height_urban': 213.36,
   'height_rural': 182.88
 }
@@ -49,6 +50,25 @@ skeleton_meta = {  # 200 is placeholder
   "right_ankle": 5
 }
 
+object_colors = {
+    'background': [0, 0, 0],
+    'stopsign': [128, 128, 0],
+    'skeleton': [0, 128, 128]
+}
+
+water_label_id = 1
+
+
+def draw_instances(img: np.array, instances: Instances):
+
+    for i in range(len(instances)):
+        if instances[i].pred_classes != 11:
+            continue
+        mask = instances[i].pred_masks.squeeze(0).numpy().astype(np.uint8)
+        img = myutils.add_overlay(img, mask, object_colors['background'] + object_colors['stopsign'])
+
+    return img
+
 
 def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
 
@@ -65,8 +85,8 @@ def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
         return [], None
 
     lines = lines.squeeze()
-    dir = abs(lines[:, 0] - lines[:, 2]) / abs(lines[:, 1] - lines[:, 3])
-    lines_vert = lines[dir < 1]
+    dir = (abs(lines[:, 0] - lines[:, 2]) + 1) / (abs(lines[:, 1] - lines[:, 3]) + 1)  # dx/dy
+    lines_vert = lines[dir < 0.5]
     lines_vec = myutils.normalize(lines_vert[:, 2:] - lines_vert[:, :2])
 
     # viz
@@ -127,19 +147,16 @@ def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
         lines_parallel = lines_parallel[np.bitwise_or(lines_end_flag0, lines_end_flag1)]
 
         # dist
-        dist0 = abs(lines_parallel[:, 1] - pt_bottom[1]) < stopsign_h * 5
-        dist1 = abs(lines_parallel[:, 3] - pt_bottom[1]) < stopsign_h * 5
-        poles = lines_parallel[np.bitwise_or(dist0, dist1)]
+        dist0 = abs(lines_parallel[:, 1] - pt_bottom[1]) < stopsign_h * 3
+        dist1 = abs(lines_parallel[:, 3] - pt_bottom[1]) < stopsign_h * 3
+        poles = lines_parallel[np.bitwise_and(dist0, dist1)]
 
         # viz
         # for x1, y1, x2, y2 in poles:
         #     cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
         # cv2.imshow('img', img)
-        # viz
         # tmp = edge_map.copy()
         # cv2.drawContours(tmp, cnts, -1, 255, 3)
-        # cv2.imshow('mask', instance_mask)
         # cv2.imshow('tmp', tmp)
         # cv2.drawContours(edge_map, approx, -1, 255, 3)
         # cv2.imshow('edge', edge_map)
@@ -172,9 +189,20 @@ def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
         # topk = len(poles_bottom_arr) // 2
         # poles_bottom_arr = poles_bottom_arr[rank_d[topk:]]
 
-        poles_bottom_pt = poles_bottom_arr.mean(axis=0)
+        poles_bottom_pt = poles_bottom_arr.mean(axis=0).astype(np.int32)
+
+        dx = (poles_bottom_pt[0] - pt_bottom[0]) / (poles_bottom_pt[1] - pt_bottom[1])
+        pole_x, pole_y = poles_bottom_pt[0], poles_bottom_pt[1]
+        for y in range(poles_bottom_pt[1], water_mask.shape[0]):
+            if water_mask[y][np.round(pole_x).astype(np.int32)] == water_label_id:
+                pole_y = y
+                break
+            else:
+                pole_x += dx
+
+        poles_bottom_pt = np.array([pole_x, pole_y])
         poles_bottom_d = myutils.dist(poles_bottom_pt, pt_bottom, axis=0)
-        cos_ratio = (poles_bottom_pt[1] - pt_bottom[1]) / poles_bottom_d
+        # cos_ratio = (poles_bottom_pt[1] - pt_bottom[1]) / poles_bottom_d
         raw_data_list.append({
             'pole_top': (*pt_bottom, 1),
             'pole_bottom': (*poles_bottom_pt, 1)
@@ -183,12 +211,12 @@ def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
         # print(poles_bottom_pt)
 
         px2cm = stopsign_meta['size'] / stopsign_h
-        pole_d_cm = px2cm * poles_bottom_d
-        pole_h_cm = pole_d_cm * cos_ratio
+        pole_h_cm = px2cm * poles_bottom_d
+        # pole_h_cm = pole_d_cm * cos_ratio
 
         stopsign_in_water = max(0, stopsign_meta['height_urban'] - pole_h_cm)
         stopsign_in_waters.append(stopsign_in_water)
-        print('Est stopsign in water', stopsign_in_water, cos_ratio)
+        print('Est stopsign in water', stopsign_in_water)
 
         stopsign_pt.append(poles_bottom_pt)
         stopsign_d.append(stopsign_in_water)
@@ -199,10 +227,10 @@ def waterlevel_by_stopsign(img, instances, water_mask, viz_img):
         cv2.line(viz_img, tuple(poles_bottom_pt.astype(np.int)), tuple(pt_bottom.astype(np.int)), (0, 0, 200), 2)
 
         text_pos = pt_bottom.astype(np.int)
-        text_pos[0] = max(0, text_pos[0] - 200)
-        text_pos[1] = max(0, text_pos[1] + 40)
+        text_pos[0] = max(0, text_pos[0] - 300)
+        text_pos[1] = max(0, text_pos[1] + 100)
         text = f'Depth {stopsign_in_water:.1f}cm'
-        cv2.putText(viz_img, text, text_pos, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 200), thickness=2)
+        cv2.putText(viz_img, text, text_pos, cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 200), thickness=3)
         # cv2.imshow('viz_img', viz_img)
         # cv2.waitKey()
 
@@ -252,8 +280,8 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
             # if water_ratio < water_thres:
             #     continue
 
-            if water_mask:
-                cv2.circle(viz_img, (int(x.item()), int(y.item())), radius=2, color=(0, 200, 0), thickness=2)
+            # if water_mask:
+            #     cv2.circle(viz_img, (int(x.item()), int(y.item())), radius=2, color=(0, 200, 0), thickness=2)
 
             if not max_depth_keypoint_name or (max_depth > skeleton_meta[keypoint_names[i]]):
                 max_depth_keypoint_name = keypoint_names[i]
@@ -263,7 +291,7 @@ def waterlevel_by_skeleton(pred_keypoints, water_mask, keypoint_names, viz_img):
 
         raw_data_list.append(raw_data_dict)
 
-        if max_depth_keypoint_name and water_mask:
+        if max_depth_keypoint_name and water_mask is not None:
             # key_centers.append([water_depth_x, water_depth_y])
             key_depths.append(max_depth)
 
@@ -316,15 +344,16 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
         instances = pred_obj['instances'].to(torch.device('cpu'))
 
         if opt == 'stopsign':
-            visualizer.draw_instance_predictions(predictions=instances)
+            # viz_img = draw_instances(img, instances)
+            viz_img = img
+            # visualizer.draw_instance_predictions(predictions=instances)
         else:
             for keypoints_per_instance in instances.pred_keypoints:
                 visualizer.draw_and_connect_keypoints(keypoints_per_instance)
+                viz_img = visualizer.output.get_image()
 
-        if water_mask:
-            viz_img = myutils.add_overlay(visualizer.output.get_image(), water_mask, myutils.color_palette)
-        else:
-            viz_img = visualizer.output.get_image()
+        if water_mask is not None:
+            viz_img = myutils.add_overlay(viz_img, water_mask, myutils.color_palette)
 
         if opt == 'stopsign':
             waterlevels, viz_img, raw_data_list = waterlevel_by_stopsign(img, instances, water_mask, viz_img)
