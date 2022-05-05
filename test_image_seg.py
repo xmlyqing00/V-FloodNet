@@ -38,8 +38,8 @@ import myutils
 ROOT_DIR = './'
 # time_str = timestr = time.strftime("%Y-%m-%d %H-%M-%S")
 # DEFAULT_OUT = os.path.join(ROOT_DIR, 'output', 'test_waterseg', time_str)
-DEFAULT_OUT = os.path.join(ROOT_DIR, 'output', 'test_image_seg')
-DEFAULT_PALETTE = os.path.join(ROOT_DIR, "assets", "mask_palette.png")
+DEFAULT_OUT = os.path.join(ROOT_DIR, 'output', 'segs')
+# DEFAULT_PALETTE = os.path.join(ROOT_DIR, "assets", "mask_palette.png")
 # sys.path.append(ROOT_DIR)
 # print("Added", ROOT_DIR, "to PATH.")
 
@@ -76,7 +76,7 @@ def predict_one(path, model, mask_outdir, overlay_outdir, device):
     :param overlay_outdir: Filepath to overlay out directory
     :return: None
     """
-    img_pil = Image.open(path)
+    img_pil = myutils.load_image_in_PIL(path)
 
     # Prediction is an PIL Image of 0s and 1s
     prediction = predict_pil(model, img_pil, model_dims=(416, 416), device=device)

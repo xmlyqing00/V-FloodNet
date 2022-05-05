@@ -46,14 +46,14 @@ def calc_uncertainty(score):
     return uncertainty
 
 
-def save_seg_mask(pred, seg_path, palette):
+def save_seg_mask(pred, seg_path, palette=color_palette):
 
     seg_img = Image.fromarray(pred)
     seg_img.putpalette(palette)
     seg_img.save(seg_path)
 
 
-def add_overlay(img, mask, colors, alpha=0.4, cscale=1):
+def add_overlay(img, mask, colors=color_palette, alpha=0.4, cscale=1):
 
     ids = np.unique(mask)
     img_overlay = img.copy()
