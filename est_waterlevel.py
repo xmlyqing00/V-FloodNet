@@ -27,11 +27,6 @@ def get_parser():
 
 def main(args):
 
-    # if args.gpu >= 0 and torch.cuda.is_available():
-    #     device = torch.device('cuda', args.gpu)
-    # else:
-    #     device = torch.device('cpu')
-
     args.water_mask_dir = os.path.join('./output/segs/', args.test_name, 'mask')
     img_list = sorted(glob(os.path.join(args.img_dir, '*.jpg')) + glob(os.path.join(args.img_dir, '*.png')))
     water_mask_list = sorted(glob(os.path.join(args.water_mask_dir, '*.png')))
@@ -44,7 +39,6 @@ def main(args):
         est_by_reference(img_list, water_mask_list, out_dir, args.test_name)
     else:
         raise NotImplementedError(args.opt)
-
 
 if __name__ == '__main__':
 

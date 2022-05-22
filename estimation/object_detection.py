@@ -122,7 +122,9 @@ def waterdepth_by_stopsign2(img, instances, water_mask, result_dir, img_name):
         template_plate_pts = np.float32(template_plate_pts)
 
         # trans_mat, status = cv2.findHomography(template_plate_pts, est_plate_pts)
-        trans_mat, status = cv2.findHomography(template_plate_pts, est_plate_pts, cv2.RANSAC, 5)
+        trans_mat, status = cv2.findHomography(template_plate_pts, est_plate_pts)
+        print('trans mat', trans_mat)
+        print('status', status)
         template_pts = np.concatenate([template_plate_pts, template_pole_top.reshape(1, 2), template_pole_bottom.reshape(1, 2)], axis=0)
         # template_pts2 = np.concatenate([template_pts, np.ones((10, 1))], axis=1)
         # template_pts2_proj = np.matmul(trans_mat, (template_pts2.T)).T
@@ -137,6 +139,9 @@ def waterdepth_by_stopsign2(img, instances, water_mask, result_dir, img_name):
         viz_img = img.copy()
         for i in range(pts_n):
             cv2.line(viz_img, template_pts_proj[i], template_pts_proj[(i + 1) % pts_n], template_color, thickness)
+            cv2.line(est_canvas, template_pts_proj[i], template_pts_proj[(i + 1) % pts_n], (200, 0, 200), thickness)
+            # cv2.imshow('est', est_canvas)
+            # cv2.waitKey()
         viz_img = cv2.line(viz_img, template_pole_top_proj, template_pole_bottom_proj, template_color, thickness)
 
         # cv2.imshow('viz_img', viz_img)
@@ -542,7 +547,7 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
     result_dir = os.path.join(out_dir, 'result')
     os.makedirs(result_dir, exist_ok=True)
 
-    for i in trange(len(img_list)):
+    for i in trange(30, len(img_list)):
         img_path = img_list[i]
         img_name = os.path.basename(img_path)[:-4]
         img = cv2.imread(img_path)

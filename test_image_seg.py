@@ -16,11 +16,9 @@ python test_waterseg.py --model_path "D:\DATASETS\models\model.pth" --test_path 
 Individual test:
 python test_waterseg.py --model_path "D:\DATASETS\models\model.pth" --test_path "D:\DATASETS\TESTDATA\test_file.jpg"
 """
-import sys
 import os
 import argparse
-import time
-
+import cv2
 import numpy as np
 
 from PIL import Image
@@ -30,7 +28,6 @@ from tqdm import tqdm
 
 import torch
 import torchvision.transforms as tf
-import torchvision.transforms.functional as TF
 
 import myutils
 
@@ -87,9 +84,12 @@ def predict_one(path, model, mask_outdir, overlay_outdir, device):
     prediction.save(mask_savepth)
 
     over_savepth = os.path.join(overlay_outdir, basename + '.png')
-    overlay_np = np.array(img_pil) * 1 + np.array(prediction.convert('RGB')) * 0.8
-    overlay_np = overlay_np.clip(0, 255)
-    Image.fromarray(overlay_np.astype(np.uint8)).save(over_savepth)
+    img_np = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
+    overlay_np = myutils.add_overlay(img_np, np.array(prediction))
+    cv2.imwrite(over_savepth, overlay_np)
+    # overlay_np = np.array(img_pil) * 1 + np.array(prediction.convert('RGB')) * 0.8
+    # overlay_np = overlay_np.clip(0, 255)
+    # Image.fromarray(overlay_np.astype(np.uint8)).save(over_savepth)
 
 
 def predict_pil(model, img_pil, model_dims, device):
@@ -100,7 +100,6 @@ def predict_pil(model, img_pil, model_dims, device):
     :param model_dims: Model input dimensions
     :return: Segmentation prediction as PIL Image
     """
-    palette = [0, 0, 0, 0, 0, 128, 0, 128, 0, 128, 0, 0]
 
     img_np = np.array(img_pil)
     img_tensor_norm = norm_imagenet(img_pil, model_dims)
@@ -154,7 +153,7 @@ def test_waterseg(model_path, test_path, test_name, out_path, device):
 
 if __name__ == '__main__':
     # Hyper parameters
-    parser = argparse.ArgumentParser(description='PyTorch WaterNet Model Testing')
+    parser = argparse.ArgumentParser(description='V-FloodNet Video WaterNet Model Testing')
     # Required: Path to the .pth file.
     parser.add_argument('--model_path',
                         default='./records/link_efficientb4_model.pth',
@@ -171,15 +170,6 @@ if __name__ == '__main__':
                         type=str,
                         required=True,
                         help='Test name')
-    # Optional: Defaults to the palette file in video_module/assets
-    # parser.add_argument('--palette_path',
-    #                     default=DEFAULT_PALETTE,
-    #                     type=str,
-    #                     metavar='PATH',
-    #                     help='(OPTIONAL) Path to palette file, defaults to file in video_module/assets')
-    # Optional: Defaults to the output file in the project root/test_waterseg/<Date and Time at Runtime>
-    # Produces two folders: 'masks' to contain the raw palette-based masks
-    #                       'overlay' to contain an overlay
     parser.add_argument('--out_path',
                         default=DEFAULT_OUT,
                         type=str,

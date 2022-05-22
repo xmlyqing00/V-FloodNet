@@ -79,6 +79,8 @@ def main(args):
     tracker_num = px_to_meter.shape[0]
     data_num = len(waterlevel)
     waterlevel_meter = np.zeros((tracker_num, data_num))
+
+    # conversion
     for i in range(tracker_num):
         waterlevel_meter[i] = px_to_meter[i, 0] * waterlevel[f'est_ref{i}_px'] + px_to_meter[i, 1]
     waterlevel[metric] = np.nanmean(waterlevel_meter, axis=0)

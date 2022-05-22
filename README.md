@@ -1,6 +1,17 @@
-# WaterNetV2
+# V-FloodNet
 
-We build a water level estimation system. It first segments the water regions from each frame/image, then uses the reference objects to estimate the water level.
+This is an official PyTorch implementation for paper "V-FloodNet: A Video Segmentation System for Urban Flood Detection and Quantification".
+
+## Environments
+We developed and tested the source code under Ubuntu 18.04 and PyTorch framework. 
+The following packages are required to run the code.
+
+First, a python virtual environment is recommended. 
+I use `pip` to create one and `conda` can do the same thing.
+
+```bash
+
+```
 
 ## Run the image segmentation
 ```bash
