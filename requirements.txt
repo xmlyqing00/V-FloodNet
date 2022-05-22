@@ -1,9 +1,10 @@
+opendr
+matplotlib
+
 tqdm
 numpy
 scipy
 pandas
-pillow>=7.2.0
+pillow
 opencv-contrib-python>=3.4.2.17
 opencv-python>=3.4.2.17
-torch==1.8.1
-torchvision==0.9.1

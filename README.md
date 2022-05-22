@@ -7,12 +7,25 @@ We developed and tested the source code under Ubuntu 18.04 and PyTorch framework
 The following packages are required to run the code.
 
 First, a python virtual environment is recommended. 
-I use `pip` to create one and `conda` can do the same thing.
+I use `pip` to create a virtual environment named `env` and activate it.
 
 ```bash
-
+python3 -m venv env
+source env/bin/activate
 ```
 
+In the virtual environment, install the following required packages from their official instructions.
+
+- torch, torchvision, from [PyTorch](https://pytorch.org). We used v1.8.2+cu111 is used in our code.
+- [Detectron2](https://github.com/facebookresearch/detectron2) for reference objects segmentation.
+- MeshTransformer for 
+
+We provide the corresponding installation command here
+
+```bash
+pip install torch==1.8.2+cu111 torchvision==0.9.2+cu111 torchaudio==0.8.2 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
+pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
+```
 ## Run the image segmentation
 ```bash
 python3 test_image_seg.py \
