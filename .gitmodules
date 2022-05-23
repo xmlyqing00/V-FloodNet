@@ -1,0 +1,3 @@
+[submodule "MeshTransformer"]
+	path = MeshTransformer
+	url = git@github.com:microsoft/MeshTransformer.git
