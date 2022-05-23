@@ -1,10 +1,16 @@
 opendr
 matplotlib
-
+yacs
+cython
+nltk
+chumpy
+boto3
+requests
 tqdm
 numpy
 scipy
 pandas
 pillow
+segmentation_models_pytorch
 opencv-contrib-python>=3.4.2.17
 opencv-python>=3.4.2.17

@@ -153,24 +153,24 @@ def test_waterseg(model_path, test_path, test_name, out_path, device):
 
 if __name__ == '__main__':
     # Hyper parameters
-    parser = argparse.ArgumentParser(description='V-FloodNet Video WaterNet Model Testing')
+    parser = argparse.ArgumentParser(description='V-FloodNet: Water Image Segmentation')
     # Required: Path to the .pth file.
-    parser.add_argument('--model_path',
+    parser.add_argument('--model-path',
                         default='./records/link_efficientb4_model.pth',
                         type=str,
                         metavar='PATH',
                         help='Path to the model')
     # Required: Path to either the single file or directory of files containing .jpg or .png images
-    parser.add_argument('--test_path',
+    parser.add_argument('--test-path',
                         type=str,
                         metavar='PATH',
                         required=True,
                         help='Can point to folder or an individual jpg/png image')
-    parser.add_argument('--test_name',
+    parser.add_argument('--test-name',
                         type=str,
                         required=True,
                         help='Test name')
-    parser.add_argument('--out_path',
+    parser.add_argument('--out-path',
                         default=DEFAULT_OUT,
                         type=str,
                         metavar='PATH',

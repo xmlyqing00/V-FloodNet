@@ -8,85 +8,68 @@ The following packages are required to run the code.
 
 First, a python virtual environment is recommended. 
 I use `pip` to create a virtual environment named `env` and activate it.
+Then, recursively pull the submodules code.
 
-```bash
+```shell
 python3 -m venv env
 source env/bin/activate
+git submodule update --init --recursive
 ```
 
 In the virtual environment, install the following required packages from their official instructions.
 
-- torch, torchvision, from [PyTorch](https://pytorch.org). We used v1.8.2+cu111 is used in our code.
+- torch, torchvision, from [PyTorch](https://pytorch.org). We used v1.8.2+cu111 is used in our code. 
+- [PyTorch Scatter](https://github.com/rusty1s/pytorch_scatter) for scatter operations. We used the version for torch 1.8.1+cu111. 
 - [Detectron2](https://github.com/facebookresearch/detectron2) for reference objects segmentation.
-- MeshTransformer for 
+- [MeshTransformer](https://github.com/microsoft/MeshTransformer) for human detection and 3D mesh alignment.
 
 We provide the corresponding installation command here
 
-```bash
+```shell
 pip install torch==1.8.2+cu111 torchvision==0.9.2+cu111 torchaudio==0.8.2 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
+pip install torch-scatter==2.0.8 -f https://data.pyg.org/whl/torch-1.8.1+cu111.html -v
 pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
-```
-## Run the image segmentation
-```bash
-python3 test_image_seg.py \
-    --test_path=/path/to/image_folder \
-    --test_name=<test_name>
+cd MeshTransformer
+python setup.py build develop
+pip install ./manopth/.
 ```
 
-## Estimate Water Level / Water Depth
-
-### Stopsign
-
-```bash
-python3 est_waterlevel.py \
-    --test_name=stopsign \
-    --img_dir=/path/to/image_folder \
-    --water_mask_dir=./output/test_image_seg/<test_name>/mask
-    --opt=stopsign
+Then install the rest packages indicated in `requirements.txt`
+```shell
+pip install -r requirements.txt
 ```
 
-### Skeleton
+## Usage
 
-```bash
-python3 est_waterlevel.py \
-    --test_name=skeleton \
-    --img_dir=/path/to/image_folder \
-    --water_mask_dir=./output/test_image_seg/<test_name>/mask
-    --opt=skeleton
+Download and extract the pretrained weights, and put them in the folder `./records/`. Weights and groundtruths are stored in [Google Drive](https://drive.google.com/file/d/1r0YmT24t4uMwi4xtSLXD5jyaMIuMzorS/view?usp=sharing).
+
+### Water Image Segmentation
+Put the testing images in `image_folder`, then
+```shell
+python test_image_seg.py \
+    --test_path=/path/to/image_folder --test_name=<test_name>
 ```
-https://tidesandcurrents.noaa.gov/waterlevels.html?id=8443970&type=Tide+Data&name=Boston&state=MA
+The default output folder is `output/segs/`
 
-<!-- 
-In the first part, we have two modules to segment the water region, the first one is the video module, and the second one is the image module.
-- Video module: Take the first frame annotation as input, segment the water masks from the rest frames.
-- Image module: Use the prior water image dataset, it can automatically segment the water region and reference objects from image.
+### Water Video Segmentation
+If your input is a video, we provide a script `scripts/cvt_video_to_imgs.py` to extract frames of the video.
+Put the extracted frames in `frame_folder`, then
+```shell
+python test_video_seg.py \
+    --test-path=/path/to/frame_folder --test-name=<test_name>
+```
 
-As for the second part, water level estimation. It has several options depend on the reference object.
-- Reference object is fixed (in `est_waterlevel.py`)
-- Reference object is selected by user (in `est_waterlevel.py`)
-- Reference object is either human skeleton or stop sign (in `seg_image.py`) -->
-  
-<!-- To do list
-- [] Get familiar with PyTorch
-- [ ] Run codes: Segment the water region by video module (the pretrained model is available on Google drive https://drive.google.com/drive/folders/1sU5rTSotwR1e3bmlH8Ux_x4gTBQb-QvO?usp=sharing)  
-- [ ] Run codes: Estimate the water level by user selected references. In `est_waterlevel.py`
-- [ ] Run codes: Segment the water region by image module.
-- [ ] Run codes: Estimate the water level by the skeleton and stop sign.
-- [ ] Think about the data representations, how do we make it together? how do we store water segmentation results and reference object information? How can we combine the image-based segmentation and the video-based segmentation together?
-- [ ] Reorganize the code structure.
-- [ ] Reorganize the water dataset 
-- [ ] Run the experiments.
-- [ ] Compare other methods with ours.
+### Water Depth Estimation
 
+We provide three options `stopsign`, `people`, and `ref` for `--opt` to specify three types reference objects.
+```shell
+python est_waterlevel.py \
+  --opt=<opt> --test-name=<test_name> --img-dir=/path/to/img_folder
+```
+For input video, to compare the estimated water level with the groundtruths in `records/groundtruth/`, you can use 
+```shell
+python cmp_hydrograph.py --test-name=<test_name>
+```
 
-[comment]: <> (--config-file)
-
-[comment]: <> (../projects/PointRend/configs/InstanceSegmentation/pointrend_rcnn_R_50_FPN_3x_coco.yaml)
-
-[comment]: <> (--input)
-
-[comment]: <> (/Ship01/Dataset/VOS/water/JPEGImages/test_imgs/8.jpg)
-
-[comment]: <> (--output)
-
-[comment]: <> (/Ship01/tmp/human/) -->
+## Copyright
+This paper is submitted to Elsevier Journal Computers, Environment and Urban Systems under review. The corresponding author is Xin Li (Xin Li <xin.shane.li@ieee.org>).  All rights are reserved.

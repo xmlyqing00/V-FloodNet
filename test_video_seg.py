@@ -18,22 +18,22 @@ torch.set_grad_enabled(False)
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='Test Video Segmentation')
+    parser = argparse.ArgumentParser(description='V-FloodNet: Water Video Segmentation')
     parser.add_argument('--gpu', type=int, default=0,
                         help='GPU card id.')
     parser.add_argument('--budget', type=int, default='250000',
                         help='Max number of features that feature bank can store. Default: 300000')
-    parser.add_argument('--viz', action='store_true',
+    parser.add_argument('--viz', action='store_true', default=True,
                         help='Visualize data.')
-    parser.add_argument('--model_path', type=str, required=True,
+    parser.add_argument('--model-path', type=str, default='records/video_seg_checkpoint_20200212-001734.pth',
                         help='Path to the checkpoint (default: none)')
     parser.add_argument('--update-rate', type=float, default=0.1,
                         help='Update Rate. Impact of merging new features.')
     parser.add_argument('--merge-thres', type=float, default=0.95,
                         help='Merging Rate. If similarity higher than this, then merge, else append.')
-    parser.add_argument('--test_path', type=str, required=True,
+    parser.add_argument('--test-path', type=str, required=True,
                         help='Video Path')
-    parser.add_argument('--test_name', type=str, required=True,
+    parser.add_argument('--test-name', type=str, required=True,
                         help='Video Name')
     return parser.parse_args()
 
@@ -61,18 +61,18 @@ def main(args, device):
     first_frame = myutils.load_image_in_PIL(img_list[0])
     first_name = os.path.basename(img_list[0])[:-4]
 
-    image_model_out_dir = './output/test_image_seg'
-    mask_dir = os.path.join(image_model_out_dir, args.test_name, 'mask')
+    out_dir = './output/segs'
+    mask_dir = os.path.join(out_dir, args.test_name, 'mask')
     mask_path = os.path.join(mask_dir, first_name + '.png')
     if not os.path.exists(mask_path):
         image_model_path = './records/link_efficientb4_model.pth'
-        test_waterseg(image_model_path, img_list[0], args.test_name, image_model_out_dir, device)
+        test_waterseg(image_model_path, img_list[0], args.test_name, out_dir, device)
 
     first_mask = myutils.load_image_in_PIL(mask_path, 'P')
     seq_dataset = Video_DS(img_list, first_frame, first_mask)
 
     seq_loader = utils.data.DataLoader(seq_dataset, batch_size=1, shuffle=False, num_workers=1)
-    out_dir = './output/test_video_seg'
+
     seg_dir = os.path.join(out_dir, args.test_name, 'mask')
     os.makedirs(seg_dir, exist_ok=True)
     if args.viz:
