@@ -84,14 +84,22 @@ def main(args):
     for i in range(tracker_num):
         waterlevel_meter[i] = px_to_meter[i, 0] * waterlevel[f'est_ref{i}_px'] + px_to_meter[i, 1]
     waterlevel[metric] = np.nanmean(waterlevel_meter, axis=0)
-    waterlevel.to_csv(waterlevel_path)
+
     timestamp_list_est = pd.to_datetime(waterlevel.index)
     gt_val = pd.to_numeric(gt_csv.iloc[:, gt_col_id], 'coerce') * metric_scale
 
     # Calc error
     gt_val_sample = get_gt_sample(timestamp_list_est, timestamp_list_gt, gt_val)
     abs_err = np.absolute(waterlevel[metric] - gt_val_sample)
-    results = f'Absolute error (meter): mean {abs_err.mean():.3f} std {abs_err.std():.3f}'
+    abs_err_ratio = np.absolute(abs_err / np.nanmax(gt_val_sample))
+
+    # convert to centimeter
+    abs_err *= 100
+    abs_err_ratio *= 100
+    results = f'Absolute error (cm): mean {abs_err.mean():.3f} std {abs_err.std():.3f} \n' \
+              f'Absolute error rate (%): mean {abs_err_ratio.mean():.3f} std {abs_err_ratio.std():.3f} \n'
+    waterlevel.to_csv(waterlevel_path)
+
     print(results)
     with open(os.path.join(out_dir, 'results.txt'), 'w') as f:
         f.write(results)
