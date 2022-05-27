@@ -118,11 +118,11 @@ def main(args):
         # ax.plot(timestamp_list_est, waterlevel_meter[1], '-', linewidth=3, label=f'Est Water Level1 (m)')
         high_water_val = 10.3
         ax.plot(timestamp_list_est, waterlevel[metric],
-                '-', linewidth=markersize//3, label=f'Estimated {type}')
+                '-', linewidth=markersize//3, label=f'Estimated {type} (Ours)')
         old_col_id = 5
         ax.plot(timestamp_list_est, gt_csv.iloc[:, old_col_id],
-                '-', linewidth=markersize//3, label=f'LSUSeg {type}')
-        ax.axhline(y=high_water_val, linestyle='--')
+                '-', linewidth=markersize//3, label=f'Estimated {type} (Jafari et al.)')
+        ax.axhline(y=high_water_val, linestyle='--', linewidth=4)
         ax.text(timestamp_list_est[-700], high_water_val, 'Peak Water Elevation', va='center', ha='center', backgroundcolor='w', fontsize=fontsize)
         ax.legend(loc='upper right', fontsize=fontsize)
     else:
