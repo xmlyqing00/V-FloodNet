@@ -1,6 +1,10 @@
 # V-FloodNet
 
-This is an official PyTorch implementation for paper "V-FloodNet: A Video Segmentation System for Urban Flood Detection and Quantification".
+This is an official PyTorch implementation for paper "V-FloodNet: A Video Segmentation System for Urban Flood Detection and Quantification". A robust automatic system for water level or inundation depth estimation from images and videos, consisting of reliable
+water and reference object detection/segmentation, and depth estimation models. Here are some screenshots of our results.
+
+![](assets/screenshot_people.png)
+![](assets/screenshot_video.png)
 
 ## 1 Environments
 
