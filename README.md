@@ -9,6 +9,8 @@ Here are some screenshots of our results. We can estimate water depth from the d
 We can also estimate water level from from long videos under various weather and illumination conditions.
 ![](assets/screenshot_video.png)
 
+More demo videos are available in [Google Drive](https://drive.google.com/drive/folders/1DURwcb_qhBeWYznTrpJ-7yGJTHxm7pxC?usp=sharing) under the `animation_videos` folder.
+
 ## 1 Environments
 
 ### 1.1 Code and packages
@@ -61,23 +63,6 @@ sh scripts/download_MeshTransformer_models.sh
 ```
 
 Second, download SMPL model `mpips_smplify_public_v2.zip` from the official website [SMPLify](http://smplify.is.tue.mpg.de/). Extract it and place the model file `basicModel_neutral_lbs_10_207_0_v1.0.0.pkl` at `./MeshTransformer/metro/modeling/data`.
-<!-- - Download `MANO_RIGHT.pkl` from [MANO](https://mano.is.tue.mpg.de/), and place it at `${REPO_DIR}/metro/modeling/data`. -->
-<!-- 
-```
-${REPO_DIR}  
-|-- metro  
-|   |-- modeling
-|   |   |-- data
-|   |   |   |-- basicModel_neutral_lbs_10_207_0_v1.0.0.pkl
-|   |   |   |-- MANO_RIGHT.pkl
-|-- models
-|-- datasets
-|-- predictions
-|-- README.md 
-|-- ... 
-|-- ... 
-``` -->
-<!-- Please check [/metro/modeling/data/README.md](../metro/modeling/data/README.md) for further details. -->
 
 Third, download the archives from [Google Drive](https://drive.google.com/drive/folders/1DURwcb_qhBeWYznTrpJ-7yGJTHxm7pxC?usp=sharing).
 Extract the pretrained models for water segmentation `records.zip` and put them in the folder `./records/`. 
