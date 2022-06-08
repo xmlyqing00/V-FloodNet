@@ -20,7 +20,7 @@ def get_parser():
     parser.add_argument('--out-dir', default='output/waterlevel',
                         help='A file or directory to save output results.')
     parser.add_argument('--opt', type=str,
-                        help='Estimation options.')
+                        help='Estimation options. "people", "stopsign", or "ref"')
 
     return parser.parse_args()
 
@@ -33,7 +33,7 @@ def main(args):
     out_dir = os.path.join(args.out_dir, f'{args.test_name}_{args.opt}')
     os.makedirs(out_dir, exist_ok=True)
 
-    if args.opt in ['skeleton', 'stopsign']:
+    if args.opt in ['people', 'stopsign']:
         est_by_obj_detection(img_list, water_mask_list, out_dir, args.opt)
     elif args.opt == 'ref':
         est_by_reference(img_list, water_mask_list, out_dir, args.test_name)

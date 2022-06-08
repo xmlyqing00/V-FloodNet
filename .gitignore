@@ -1,17 +1,9 @@
 .idea/
-
 __pycache__/
 
-
+vflood/
 logs/
-
-records/cp_WaterNet.pth.tar
-output/
-output2/
-overlay/
 records/
+MeshTransformer/
 
-video_module/logs/
-image_module/WaterSegModels/
-
-env/
+output/
