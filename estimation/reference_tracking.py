@@ -50,7 +50,9 @@ def get_video_homo(img_st_path, homo_mat_path):
         homo_mat = np.asmatrix(np.loadtxt(homo_mat_path))
         return homo_mat
 
-    print('Estimate the video homo mat. TopLeft, TopRight, BottomLeft, BottomRight.')
+    print('Estimate the video homo mat.')
+    print('Select four points that represent a HORIZONTAL and VERTICAL rectangle in order:')
+    print('\tTopLeft, TopRight, BottomLeft, BottomRight.')
 
     img_st = cv2.imread(img_st_path)
 
@@ -133,7 +135,11 @@ def est_by_reference(img_list, water_mask_list, out_dir, test_name):
         else:
             ticker_locator = mdates.MinuteLocator(interval=3)
     else:
-        raise NotImplementedError
+        print(f'The test_name {test_name} is not found, use the default')
+        enable_tracker = True
+        enable_calib = True
+        tracker_num = 1
+        ticker_locator = mdates.MinuteLocator(interval=3)
 
     if enable_calib:
         homo_mat_path = os.path.join(out_dir, 'homo_mat.txt')

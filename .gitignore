@@ -2,8 +2,10 @@
 __pycache__/
 
 vflood/
+env/
 logs/
 records/
 MeshTransformer/
+WaterDataset/
 
 output/

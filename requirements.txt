@@ -12,5 +12,5 @@ scipy
 pandas
 pillow
 segmentation_models_pytorch
-opencv-contrib-python>=3.4.2.17
-opencv-python>=3.4.2.17
+opencv-contrib-python==4.4.0.46
+opencv-python==4.4.0.46

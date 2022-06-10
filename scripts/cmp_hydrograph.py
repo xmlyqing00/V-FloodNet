@@ -46,8 +46,17 @@ def main(args):
     print('Load waterlevel.csv, gt.csv and px_to_meter.txt')
     waterlevel_path = os.path.join(out_dir, 'waterlevel.csv')
     waterlevel = pd.read_csv(waterlevel_path, index_col=0)
-    gt_csv = pd.read_csv(os.path.join(gt_dir, f'{args.test_name}_gt.csv'))
-    px_to_meter = np.loadtxt(os.path.join(gt_dir, f'{args.test_name}_px_to_meter.txt'))
+
+    gt_csv_path = os.path.join(gt_dir, f'{args.test_name}_gt.csv')
+    if not os.path.exists(gt_csv_path):
+        raise FileNotFoundError('Please prepare the groundtruth file like *_gt.csv in ./records/groundtruth')
+    gt_csv = pd.read_csv(gt_csv_path)
+
+    px_to_meter_path = os.path.join(gt_dir, f'{args.test_name}_px_to_meter.txt')
+    if not os.path.exists(px_to_meter_path):
+        raise FileNotFoundError('Please prepare the conversion file like *_px_to_meter.txt in ./records/groundtruth')
+    px_to_meter = np.loadtxt(px_to_meter_path)
+
     if px_to_meter.ndim == 1:
         px_to_meter = px_to_meter[np.newaxis, :]
 
@@ -108,14 +117,9 @@ def main(args):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.add_subplot(111)
 
-    # ax.plot(time_arr_gt, gt_csv.iloc[:, gt_col_id], '-', linewidth=3, label=f'Groundtruth')
     ax.plot(timestamp_list_gt, gt_val, '^', markersize=markersize, label=f'Groundtruth')
-    # print('Groundtruth', gt_csv.iloc[:, gt_col_id])
-    # print('Water level pixel', waterlevel['est_avg_px'])
 
     if 'houston' in args.test_name:
-        # ax.plot(timestamp_list_est, waterlevel_meter[0], '-', linewidth=3, label=f'Est Water Level0 (m)')
-        # ax.plot(timestamp_list_est, waterlevel_meter[1], '-', linewidth=3, label=f'Est Water Level1 (m)')
         high_water_val = 10.3
         ax.plot(timestamp_list_est, waterlevel[metric],
                 '-', linewidth=markersize//3, label=f'Estimated {type} (Ours)')
