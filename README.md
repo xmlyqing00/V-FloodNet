@@ -101,8 +101,7 @@ V-FloodNet/
 ### 2.1 Water Image Segmentation
 Put the testing images in a folder then
 ```shell
-python test_image_seg.py \
-    --test-path=/path/to/image/folder --test-name=<anyname>
+python test_image_seg.py --test-path=/path/to/image/folder --test-name=<anyname>
 ```
 The default output folder is `output/segs/`
 
@@ -110,8 +109,7 @@ The default output folder is `output/segs/`
 If your input is a video, we provide a script `scripts/cvt_video_to_imgs.py` to extract frames of the video.
 Put the extracted frames in a folder then
 ```shell
-python test_video_seg.py \
-    --test-path=/path/to/image/folder --test-name=<anyname>
+python test_video_seg.py --test-path=/path/to/image/folder --test-name=<anyname>
 ```
 
 More arguments can be found in `python test_video_seg.py --help`.
@@ -125,8 +123,7 @@ Arguments for water depth estimation
 2. `--test-name` here should be consistent with the above segmentations.
 3. `--opt`: should be one of the three options `stopsign`, `people`, and `ref` to specify three types reference objects. 
 ```shell
-python est_waterlevel.py \
-  --test-path=/path/to/image/folder --test-name=<anyname> --opt=<opt>
+python est_waterlevel.py --test-path=/path/to/image/folder --test-name=<anyname> --opt=<opt>
 ```
 
 For input video, to compare the estimated water level with the groundtruths in `records/groundtruth/`, you can use 
