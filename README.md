@@ -113,6 +113,7 @@ python test_video_seg.py --test-path=/path/to/image/folder --test-name=<anyname>
 ```
 
 More arguments can be found in `python test_video_seg.py --help`.
+
 Note that the `--budget` argument controls the maximum number of features that can be stored in GPU memory for adaptive feature bank. The default value `3000000` is an experimental number for 11GB GPU memory.
 
 ### 2.3 Water Depth Estimation
