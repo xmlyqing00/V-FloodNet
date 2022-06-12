@@ -61,7 +61,7 @@ def main(args):
         px_to_meter = px_to_meter[np.newaxis, :]
 
     metric_scale = 1
-    metric = 'meter'
+    metric = 'meters'
     if 'boston_harbor' in args.test_name:
         timestamp_list_gt = pd.to_datetime(gt_csv.iloc[:, 0] + ' ' + gt_csv.iloc[:, 1])
         if '20190119_20190123' in args.test_name:

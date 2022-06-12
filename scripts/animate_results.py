@@ -20,11 +20,11 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Convert images to videos.')
     parser.add_argument('--img-dir', type=str, default='/Ship01/Dataset/water_v3/test_videos',
                         help='Path to the input image')
-    parser.add_argument('--viz-dir', type=str, default='../output/waterlevel',
+    parser.add_argument('--viz-dir', type=str, default='./output/waterlevel',
                         help='Path to the viz image.')
-    parser.add_argument('--gt-dir', type=str, default='../records/groundtruth',
+    parser.add_argument('--gt-dir', type=str, default='./records/groundtruth',
                         help='Path to the groundtruth dir.')
-    parser.add_argument('--out-dir', type=str, default='../output/animation_videos',
+    parser.add_argument('--out-dir', type=str, default='./output/animation_videos',
                         help='Path to the input image')
     parser.add_argument('--video-name', type=str, required=True,
                         help='Name of the test video')
@@ -79,12 +79,14 @@ def cvt_images_to_video(img_dir,
     viz_list = glob(os.path.join(viz_dir, '*.png'))
     viz_list.sort(key=lambda x: (len(x), x))
 
+    print(len(img_list), len(viz_list))
+    print(viz_dir)
     assert len(img_list) == len(viz_list) and len(img_list) > 0
 
     gt_csv = pd.read_csv(gt_path)
     timestamp_list_gt, gt_val, ticker_locator, type = parse_gt_csv(gt_csv)
 
-    metric = 'meter'
+    metric = 'meters'
     waterlevel = pd.read_csv(data_path, index_col=0)
     timestamp_list_est = np.array(pd.to_datetime(waterlevel.index))
     est_val = np.array(waterlevel[metric])
@@ -146,14 +148,10 @@ def cvt_images_to_video(img_dir,
         canvas = canvas.reshape((h, w, 3))
 
         if i == 1:
-            # h, w = canvas.shape[:2]
             video = cv2.VideoWriter(video_path, fourcc, fps, (w, h))
 
         video.write(canvas)
         plt.close(fig)
-
-        # cv2.imshow('canvas', canvas)
-        # cv2.waitKey(1)
 
     video.release()
 
