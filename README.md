@@ -14,10 +14,11 @@ More demo videos are available in [Google Drive](https://drive.google.com/drive/
 ## 1 Environments
 
 ### 1.1 Code and packages
-We developed and tested the source code under Ubuntu 18.04 and PyTorch framework. 
-The following packages are required to run the code.
+We developed and tested the source code on Ubuntu 18.04 and PyTorch framework. Nvidia GPU with driver is required.
 
-First, git clone this repository
+For Windows users, running our code on WSL2 subsystem is recommended. Because part of our code has GUI window, you need to install X Server on Windows. Please refer to [this post](https://techcommunity.microsoft.com/t5/windows-dev-appconsult/running-wsl-gui-apps-on-windows-10/ba-p/1493242) for instructions.
+
+The following packages are required to run the code. First, git clone this repository
 ```bash
 git clone https://github.com/xmlyqing00/V-FloodNet.git
 ```
