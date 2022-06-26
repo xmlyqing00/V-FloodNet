@@ -24,7 +24,7 @@ git clone https://github.com/xmlyqing00/V-FloodNet.git
 ```
 
 Second, a python virtual environment is recommended. 
-I use `pip` to create a virtual environment named `env` and activate it.
+I use `pip` to create a virtual environment named `env` and activate it. Using `conda` to create a virtual environment with `python=3.8` is recommended.
 Then, recursively pull the submodules code.
 
 ```shell

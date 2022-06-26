@@ -56,7 +56,7 @@ def run_inference(args, image_list, _metro_network, smpl, renderer, mesh_sampler
     mesh_dir = os.path.dirname(image_list[0])
     image_list = sorted(image_list)
 
-    for idx, image_file in enumerate(tqdm(image_list)):
+    for idx, image_file in enumerate(tqdm(image_list, desc='Est People Mesh')):
         if 'pred' not in image_file:
             att_all = []
             img = Image.open(image_file)
