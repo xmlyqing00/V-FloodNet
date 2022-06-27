@@ -128,9 +128,9 @@ Arguments for water depth estimation
 python est_waterlevel.py --test-path=/path/to/image/folder --test-name=<anyname> --opt=<opt>
 ```
 
-For input video, to compare the estimated water level with the groundtruths in `records/groundtruth/`, you can use 
+This is an optional step. For input video, to compare the estimated water level with the groundtruths in `records/groundtruth/`, you can use 
 ```shell
-python cmp_hydrograph.py --test-name=<anyname>
+python scripts/cmp_hydrograph.py --test-name=<anyname>
 ```
 
 ## 3 Copyright
