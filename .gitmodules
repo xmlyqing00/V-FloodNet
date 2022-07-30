@@ -1,3 +1,6 @@
 [submodule "MeshTransformer"]
 	path = MeshTransformer
 	url = https://github.com/microsoft/MeshTransformer.git
+[submodule "atlantis"]
+	path = atlantis
+	url = https://github.com/smhassanerfani/atlantis.git

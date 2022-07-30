@@ -1,146 +1,287 @@
 import os
+import traceback
+import sys
 import argparse
 import time
+import gc
+import warnings
+
+from pathlib import Path
+
+import segmentation_models_pytorch as smp
+import matplotlib.pyplot as plt
+
 import torch
-from torch.utils import model_zoo, data
+from torch.utils import data
 
-from WaterSeg import WaterNetV1, WaterDataset_RGB, myutils
+ROOT_DIR = str(Path(__file__).resolve().parents[1])
+sys.path.append(ROOT_DIR)
+
+from image_module.dataset_water import WaterDataset_RGB
 
 
-def train_WaterNet():
-    # Dataset
+time_str = time.strftime("%Y-%m-%d %H-%M-%S")
+DEFAULT_CHKPT_DIR = os.path.join(ROOT_DIR, 'output', 'checkpoint_' + time_str)
 
-    dataset = WaterDataset_RGB(
+warnings.filterwarnings("ignore", category=UserWarning)
+
+# Device
+DEVICE = torch.device('cpu')
+if torch.cuda.is_available():
+    DEVICE = torch.device('cuda')
+
+# Input size must be a multiple of 32 as the image will be subsampled 5 times
+
+
+def train(args):
+    """
+    Executes train script given arguments
+    :param args: Training parameters
+    :return:
+    """
+    try:
+        torch.cuda.empty_cache()
+    except:
+        print("Error clearing cache.")
+        print(traceback.format_exc())
+
+    dataset_path = args.dataset_path
+    input_shape = args.input_shape
+    batch_size = args.batch_size
+    init_lr = args.init_lr
+    epochs = args.epochs
+    out_path = args.out_path
+    encoder_name = args.encoder
+
+    train_dir = os.path.join(dataset_path, 'train')
+    val_dir = os.path.join(dataset_path, 'val')
+
+    # Input size must be a multiple of 32 as the image will be subsampled 5 times
+    train_dataset = WaterDataset_RGB(
         mode='train_offline',
-        dataset_path=args.dataset,
-        input_size=(480, 480)
-    )
-    train_loader = data.DataLoader(dataset, batch_size=10, shuffle=True, pin_memory=True, num_workers=4)
-
-    # Model
-    water_net_v1 = WaterNetV1().to(device)
-
-    # Optimizor
-    optimizer = torch.optim.SGD(
-        params=water_net_v1.parameters(),
-        lr=args.lr,
-        momentum=0.9,
-        dampening=1e-4
+        dataset_path=train_dir,
+        input_size=(416, 416)
     )
 
-    # Load pretrained model
-    start_epoch = 0
-    if args.checkpoint:
-        if os.path.isfile(args.checkpoint):
-            print('Load checkpoint \'{}\''.format(args.checkpoint))
-            checkpoint = torch.load(args.checkpoint)
-            start_epoch = checkpoint['epoch'] + 1
-            water_net_v1.load_state_dict(checkpoint['water_net_v1'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            print('Loaded checkpoint \'{}\' (epoch {})'
-                  .format(args.checkpoint, checkpoint['epoch']))
-        else:
-            print('No checkpoint found at \'{}\''.format(args.checkpoint))
-    else:
-        print('Load pretrained ResNet 34.')
-        resnet34_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
-        # resnet50_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
-        pretrained_model = model_zoo.load_url(resnet34_url)
-        water_net_v1.load_pretrained_model(pretrained_model)
+    val_dataset = WaterDataset_RGB(
+        mode='train_offline',
+        dataset_path=val_dir,
+        input_size=(input_shape, input_shape)
+    )
 
-    # Set train mode
-    water_net_v1.train()
+    train_loader = data.DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=4
+    )
 
-    # Criterion
-    criterion = torch.nn.BCELoss().to(device)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
+    val_loader = data.DataLoader(
+        val_dataset,
+        batch_size=1,
+        shuffle=False,
+        num_workers=4
+    )
 
-    epoch_endtime = time.time()
-    saved_models = 'WaterSegModels'
-    if not os.path.exists(saved_models):
-        os.mkdir(saved_models)
+    linknet_model = smp.Linknet(
+        encoder_name=encoder_name,
+        encoder_depth=5,
+        encoder_weights='imagenet',
+        in_channels=3,
+        classes=1,
+        activation='sigmoid'
+    )
 
-    epoch_time = myutils.AvgMeter()
+    # Train LinkNet Model with given backbone
 
-    training_mode = 'Offline'
-    best_loss = 100000
+    try:
+        train_model(
+            linknet_model,
+            init_lr=init_lr,
+            num_epochs=epochs,
+            out_path=out_path,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            encoder_name=encoder_name
+        )
+    except:
+        print(traceback.format_exc())
+    try:
+        linknet_model = None
+        gc.collect()
+    except:
+        print(traceback.format_exc())
 
-    for epoch in range(start_epoch, args.epochs):
 
-        losses = myutils.AvgMeter()
-        batch_time = myutils.AvgMeter()
-        batch_endtime = time.time()
+def train_model(model, init_lr, num_epochs, out_path, train_loader, val_loader, encoder_name):
+    """
+    Trains a single image given model and further arguments
+    :param model: Model from SMP library
+    :param init_lr: Initial learning rate
+    :param num_epochs: Number of epochs to train
+    :param out_path: Folder to output checkpoints and model
+    :param train_loader: Dataloader for train dataset
+    :param val_loader: Dataloader for validation dataset
+    :return:
+    """
+    plots_dir = os.path.join(out_path, 'graphs')
+    checkpoints_dir = os.path.join(out_path, 'checkpoints')
+    models_dir = os.path.join(out_path, 'model')
 
-        lr = scheduler.get_last_lr()[0]
+    if not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+    if not os.path.exists(checkpoints_dir):
+        os.makedirs(checkpoints_dir)
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir)
 
-        print('\n=== {0} Training Epoch: [{1:4}/{2:4}]\tlr: {3:.8f} ==='.format(
-            training_mode, epoch, args.epochs - 1, lr
-        ))
+    loss = smp.utils.losses.DiceLoss()
+    metrics = [
+        smp.utils.metrics.IoU(threshold=0.5),
+    ]
 
-        for i, sample in enumerate(train_loader):
+    optimizer = torch.optim.Adam([
+        dict(params=model.parameters(), lr=init_lr),
+    ])
 
-            img, label = sample['img'].to(device), sample['label'].to(device)
+    # Create training epoch
+    train_epoch = smp.utils.train.TrainEpoch(
+        model,
+        loss=loss,
+        metrics=metrics,
+        optimizer=optimizer,
+        device=DEVICE,
+        verbose=True
+    )
 
-            output = water_net_v1(img)
+    # Create validation epoch
+    valid_epoch = smp.utils.train.ValidEpoch(
+        model,
+        loss=loss,
+        metrics=metrics,
+        device=DEVICE,
+        verbose=True
+    )
 
-            loss = criterion(output, label)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+    max_score = 0
+    train_iou_score_ls = []
+    train_dice_loss_ls = []
 
-            losses.update(loss.item())
+    val_iou_score_ls = []
+    val_dice_loss_ls = []
 
-            if (i + 1) % 10 == 0 or (i + 1) == len(train_loader):
-                batch_time.update(time.time() - batch_endtime)
-                batch_endtime = time.time()
+    # Go through each epoch
+    for epoch in range(0, num_epochs):
+        title = 'Epoch: {}'.format(epoch)
+        print('\nEpoch: {}'.format(epoch))
 
-                print('Batch: [{0:4}/{1:4}]\t'
-                      'Time: {batch_time.val:.0f}s ({batch_time.sum:.0f}s)  \t'
-                      'Loss: {loss.val:.4f} ({loss.avg:.4f})'.format(
-                    i, len(train_loader) - 1,
-                    batch_time=batch_time, loss=losses))
+        # Epoch logs
+        train_logs = train_epoch.run(train_loader)
+        valid_logs = valid_epoch.run(val_loader)
 
-        scheduler.step()
-        epoch_time.update(time.time() - epoch_endtime)
-        epoch_endtime = time.time()
-
-        print('Time: {epoch_time.val:.0f}s ({epoch_time.sum:.0f}s)  \t'
-              'Avg loss: {loss.avg:.4f}'.format(
-            epoch_time=epoch_time, loss=losses))
-
-        model_path = os.path.join(saved_models, 'cp_WaterNet_final.pth')
+        # Checkpoint to resume training
         checkpoint = {
             'epoch': epoch,
-            'water_net_v1': water_net_v1.state_dict(),
+            'weights': model.state_dict(),
             'optimizer': optimizer.state_dict(),
-            'loss': losses.avg,
+            'loss': loss.state_dict()
         }
-        torch.save(obj=checkpoint, f=model_path)
-        print(f'Epoch {epoch}. Save latest model to {model_path}.')
 
-        if losses.avg < best_loss:
-            best_loss = losses.avg
-            model_path = os.path.join(saved_models, 'cp_WaterNet_best.pth')
-            torch.save(obj=checkpoint, f=model_path)
-            print(f'Epoch {epoch}. Save best model to {model_path}.')
+        # Get IOU score
+        score = float(valid_logs['iou_score'])
+
+        checkpoint_savepth = os.path.join(checkpoints_dir, 'epoch_' + str(epoch).zfill(3) + '_score' + str(score) + '.pth')
+        torch.save(checkpoint, checkpoint_savepth)
+
+        # Check score on valid dataset
+        if score > max_score:
+            max_score = score
+            model_savepth = os.path.join(models_dir, 'linknet_' + encoder_name + '_epoch_' + str(epoch).zfill(3) + '_score' + str(score) + '.pth')
+            torch.save(model, model_savepth)
+            print('New best model detected.')
+
+        # Adjust learning rate halfway through training.
+        if epoch == int(num_epochs / 2):
+            optimizer.param_groups[0]['lr'] = 1e-5
+            print('Decrease decoder learning rate to 1e-5!')
 
 
+        train_iou_score_ls.append(train_logs['iou_score'])
+        train_dice_loss_ls.append(train_logs['dice_loss'])
+
+        val_iou_score_ls.append(valid_logs['iou_score'])
+        val_dice_loss_ls.append(valid_logs['dice_loss'])
+
+        plot_train_filepth = os.path.join(plots_dir, 'epoch_' + str(epoch).zfill(3) + '_train.png')
+        plot_val_filepth = os.path.join(plots_dir, 'epoch_' + str(epoch).zfill(3) + '_val.png')
+        plt.plot(train_iou_score_ls, label='train iou_score')
+        plt.plot(train_dice_loss_ls, label='train dice_loss')
+        plt.legend(loc="upper left")
+        plt.title(title)
+        plt.savefig(plot_train_filepth)
+        plt.close()
+
+        plt.plot(val_iou_score_ls, label='val iou_score')
+        plt.plot(val_dice_loss_ls, label='val dice_loss')
+        plt.legend(loc="upper left")
+        plt.title(title)
+        plt.savefig(plot_val_filepth)
+        plt.close()
+
+
+"""
+    python train_segmodel.py --dataset_path 
+"""
 if __name__ == '__main__':
     # Hyper parameters
-    parser = argparse.ArgumentParser(description='PyTorch WaterNet Training')
-    parser.add_argument('--epochs', default=200, type=int, help='Number of total epochs to run (default 200).')
-    parser.add_argument('--lr', default=1e-2, type=float, help='Initial learning rate.')
-    parser.add_argument('--dataset', type=str, default='/Ship01/Dataset/VOS/water', help='Dataset folder.')
-    parser.add_argument(
-        '-c', '--checkpoint', default=None, type=str, metavar='PATH',
-        help='Path to latest checkpoint (default: none).')
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(description='PyTorch WaterNet Model Testing')
+    # Required: Path to the .pth file.
+    parser.add_argument('--dataset_path',
+                        type=str,
+                        metavar='PATH',
+                        help='Path to the dataset. Expects format shown in the header comments.')
+    # Required: Model name. Can be efficient
+    parser.add_argument('--encoder',
+                        type=str,
+                        metavar='PATH',
+                        help='Encoder name, as used by segmentation_model.pytorch library')
+    # Optional: Image input size that the model should be designed to accept. In LinkNet, image will be
+    #           subsampled 5 times, and thus must be a factor of 32.
+    parser.add_argument('--input_shape',
+                        default=416,
+                        type=int,
+                        help='(OPTIONAL) Input size for model. Single integer, should be a factor of 32.')
+    # Optional: Batch size for mini-batch gradient descent. Defaults to 4, depends on GPU and your input shape.
+    parser.add_argument('--batch_size',
+                        default=4,
+                        type=int,
+                        help='(OPTIONAL)  Batch size for mini-batch gradient descent.')
+    # Initial Learning Rate: Initial learning rate. Learning gets set to 1e-5 halfway through training.
+    parser.add_argument('--init_lr',
+                        default=1e-4,
+                        type=float,
+                        help='(OPTIONAL)  Batch size for mini-batch gradient descent.')
+    # Optional: Number of epochs for training
+    parser.add_argument('--epochs',
+                        default=300,
+                        type=int,
+                        help='(OPTIONAL) Number of epochs for training')
+    # Optional: Which folder the checkpoints will be saved. Defaults to a new checkpoint folder in output.
+    parser.add_argument('--out_path',
+                        default=DEFAULT_CHKPT_DIR,
+                        type=str,
+                        metavar='PATH',
+                        help='(OPTIONAL) Path to output folder, defaults to project root/output')
+    _args = parser.parse_args()
 
-    print('Args:', args)
+    print("== System Details ==")
+    print(torch.cuda.is_available())
+    print(torch.cuda.current_device())
+    print(torch.cuda.device(0))
+    print(torch.cuda.device_count())
+    print(torch.cuda.get_device_name(0))
+    print("== System Details ==")
+    print()
 
-    # Device
-    device = torch.device('cpu')
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-
-    train_WaterNet()
+    train(_args)
+    print("Done.")

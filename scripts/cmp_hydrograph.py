@@ -131,7 +131,10 @@ def main(args):
         ax.legend(loc='upper right', fontsize=fontsize)
     else:
         ax.plot(timestamp_list_est, waterlevel[metric], 'o', markersize=markersize, label=f'Estimated {type}')
-        ax.legend(loc='lower right', fontsize=fontsize)
+        if 'Boston' in args.test_name:
+            ax.legend(loc='upper left', fontsize=fontsize)
+        else:
+            ax.legend(loc='upper left', fontsize=fontsize)
 
     ax.xaxis.set_major_locator(ticker_locator)
     ax.xaxis.set_major_formatter(time_fmt)

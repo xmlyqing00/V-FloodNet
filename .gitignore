@@ -1,11 +1,13 @@
 .idea/
+.vscode/
 __pycache__/
+
+MeshTransformer/
+atlantis/
 
 vflood/
 env/
 logs/
 records/
-MeshTransformer/
 WaterDataset/
-
 output/
