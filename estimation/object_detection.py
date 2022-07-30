@@ -294,7 +294,7 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
     result_dir = os.path.join(out_dir, 'result')
     os.makedirs(result_dir, exist_ok=True)
 
-    for i in trange(len(img_list)):
+    for i in trange(len(img_list), desc='Obj Segmentation'):
         img_path = img_list[i]
         img_name = os.path.basename(img_path)[:-4]
         img = cv2.imread(img_path)
@@ -318,14 +318,14 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
             
     if opt == 'stopsign':
         with open(os.path.join(out_dir, f'waterdepth.txt'), 'w') as f:
-            for i in trange(len(img_list)):
+            for i in trange(len(img_list), desc='Save Results'):
                 img_name = os.path.basename(img_list[i])[:-4]
                 f.write(f'{img_name}\t{waterdepth_list[i][0]:.4f}\t{waterdepth_list[i][1]:.4f}\n')
 
     elif opt == 'people':
 
         cmd_str = f'cd ./MeshTransformer/ && ' \
-                  f'python3.8 ./metro/tools/inference_bodymesh.py ' \
+                  f'python ./metro/tools/inference_bodymesh.py ' \
                   f'--resume_checkpoint=./models/metro_release/metro_3dpw_state_dict.bin ' \
                   f'--image_file_or_path={os.path.abspath(out_dir)}/input/'
         print('Execute', cmd_str)
@@ -342,7 +342,7 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
         template_3d_height = template_3d_bottom - template_3d_top
 
         submerge_ratio_list = []
-        for i in trange(len(img_list)):
+        for i in trange(len(img_list), desc='Est Depth'):
             img_path = img_list[i]
             img_name = os.path.basename(img_path)[:-4]
 
@@ -357,7 +357,7 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
             canvas_est = np.ones((resolution, resolution, 3), np.uint8) * 255
             canvas_template = np.ones((resolution, resolution, 3), np.uint8) * 255
             for j in range(pred_2d.shape[0]):
-                cv2.circle(canvas_est, pred_2d[j], 0, [0, 200, 0], 2, lineType=cv2.FILLED)
+                cv2.circle(canvas_est, tuple(pred_2d[j]), 0, [0, 200, 0], 2, lineType=cv2.FILLED)
                 cv2.circle(canvas_template, (template_3d[j][0], template_3d[j][1]), 0, [0, 200, 0], 2, lineType=cv2.FILLED)
 
             water_label = mask[pred_2d[:, 1], pred_2d[:, 0]]
@@ -368,7 +368,7 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
             template_2d_above_water = template_3d[label_above_water]
 
             for j in range(pred_2d_under_water.shape[0]):
-                cv2.circle(canvas_est, pred_2d_under_water[j], 0, [0, 0, 200], 2, lineType=cv2.FILLED)
+                cv2.circle(canvas_est, tuple(pred_2d_under_water[j]), 0, [0, 0, 200], 2, lineType=cv2.FILLED)
 
             water_boundary, under_water_indices = predict_boundary(template_2d_under_water[:, 1], template_2d_above_water[:, 1], resolution)
             if np.isnan(water_boundary):
@@ -391,7 +391,7 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
                 cv2.imwrite(os.path.join(result_dir, f'{img_name}_overlay.png'), overlay)
 
         with open(os.path.join(out_dir, f'waterdepth.txt'), 'w') as f:
-            for i in trange(len(img_list)):
+            for i in trange(len(img_list), desc='Save Results'):
                 img_name = os.path.basename(img_list[i])[:-4]
                 waterdepth = submerge_ratio_list[i] * people_meta['man_height']
                 f.write(f'{img_name}\t{submerge_ratio_list[i]:.4f}\t{waterdepth:.4f}\n')

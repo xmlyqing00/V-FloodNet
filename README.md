@@ -14,16 +14,17 @@ More demo videos are available in [Google Drive](https://drive.google.com/drive/
 ## 1 Environments
 
 ### 1.1 Code and packages
-We developed and tested the source code under Ubuntu 18.04 and PyTorch framework. 
-The following packages are required to run the code.
+We developed and tested the source code on Ubuntu 18.04 and PyTorch framework. Nvidia GPU with driver is required.
 
-First, git clone this repository
+For Windows users, running our code on WSL2 subsystem is recommended. Because part of our code has GUI window, you need to install X Server on Windows. Please refer to [this post](https://techcommunity.microsoft.com/t5/windows-dev-appconsult/running-wsl-gui-apps-on-windows-10/ba-p/1493242) for instructions.
+
+The following packages are required to run the code. First, git clone this repository
 ```bash
 git clone https://github.com/xmlyqing00/V-FloodNet.git
 ```
 
 Second, a python virtual environment is recommended. 
-I use `pip` to create a virtual environment named `env` and activate it.
+I use `pip` to create a virtual environment named `env` and activate it. Using `conda` to create a virtual environment with `python=3.8` is recommended.
 Then, recursively pull the submodules code.
 
 ```shell
@@ -127,9 +128,9 @@ Arguments for water depth estimation
 python est_waterlevel.py --test-path=/path/to/image/folder --test-name=<anyname> --opt=<opt>
 ```
 
-For input video, to compare the estimated water level with the groundtruths in `records/groundtruth/`, you can use 
+This is an optional step. For input video, to compare the estimated water level with the groundtruths in `records/groundtruth/`, you can use 
 ```shell
-python cmp_hydrograph.py --test-name=<anyname>
+python scripts/cmp_hydrograph.py --test-name=<anyname>
 ```
 
 ## 3 Copyright
