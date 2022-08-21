@@ -133,5 +133,21 @@ This is an optional step. For input video, to compare the estimated water level 
 python scripts/cmp_hydrograph.py --test-name=<anyname>
 ```
 
-## 3 Copyright
+## 3 Training
+
+Retrain the model from scratch or your own data could take a long time for weeks. We strongly recommend you used our pretrained model for inferring.
+To train the image segmentation module, please refer to the `train_image_seg.py`
+
+
+
+To train the video segmentation module, please refer to the `train_video_seg.py`. We provide an initial training point in [Google Drive](https://drive.google.com/file/d/1l9TXNV4YQMAxL8RqfL14-qofn_s641Dx/view?usp=sharing), where the network weights are pretrained on large general videos.
+We use the following parameters to train our model
+```
+python train_video_seg.py \
+--dataset=/path/to/WaterDataset/train_images \
+--resume=./records/level2_YouTubeVOS.pth \
+--new --log
+```
+
+## 4 Copyright
 This paper is submitted to Elsevier Journal Computers, Environment and Urban Systems under review. The corresponding author is Xin Li (Xin Li <xin.shane.li@ieee.org>).  All rights are reserved.
