@@ -33,7 +33,6 @@ class WaterDataset(data.Dataset):
         if mode == 'train_offline':
             with open(os.path.join(dataset_path, 'train_imgs.txt')) as f:
                 water_subdirs = f.readlines()
-
             water_subdirs = [x.strip() for x in water_subdirs]
 
             print('Initialize offline training dataset:')

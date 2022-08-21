@@ -5,30 +5,24 @@ import argparse
 import time
 import gc
 import warnings
-
-from pathlib import Path
-
-import segmentation_models_pytorch as smp
-import matplotlib.pyplot as plt
-
 import torch
+import segmentation_models_pytorch as smp
+from segmentation_models_pytorch.utils.metrics import IoU
+from segmentation_models_pytorch.utils.losses import DiceLoss
+import matplotlib.pyplot as plt
+from pathlib import Path
 from torch.utils import data
-
-ROOT_DIR = str(Path(__file__).resolve().parents[1])
-sys.path.append(ROOT_DIR)
-
 from image_module.dataset_water import WaterDataset_RGB
 
+ROOT_DIR = './'
 
-time_str = time.strftime("%Y-%m-%d %H-%M-%S")
-DEFAULT_CHKPT_DIR = os.path.join(ROOT_DIR, 'output', 'checkpoint_' + time_str)
+# time_str = time.strftime("%Y-%m-%d %H-%M-%S")
+DEFAULT_CHKPT_DIR = os.path.join(ROOT_DIR, 'output', 'img_seg_checkpoint')
 
-warnings.filterwarnings("ignore", category=UserWarning)
-
-# Device
-DEVICE = torch.device('cpu')
-if torch.cuda.is_available():
-    DEVICE = torch.device('cuda')
+# # Device
+# DEVICE = torch.device('cpu')
+# if torch.cuda.is_available():
+#     DEVICE = torch.device('cuda')
 
 # Input size must be a multiple of 32 as the image will be subsampled 5 times
 
@@ -53,8 +47,10 @@ def train(args):
     out_path = args.out_path
     encoder_name = args.encoder
 
-    train_dir = os.path.join(dataset_path, 'train')
-    val_dir = os.path.join(dataset_path, 'val')
+    # train_dir = os.path.join(dataset_path, 'train')
+    train_dir = os.path.join(dataset_path, '')
+    # val_dir = os.path.join(dataset_path, 'val')
+    val_dir = os.path.join(dataset_path, '')
 
     # Input size must be a multiple of 32 as the image will be subsampled 5 times
     train_dataset = WaterDataset_RGB(
@@ -135,9 +131,9 @@ def train_model(model, init_lr, num_epochs, out_path, train_loader, val_loader, 
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
 
-    loss = smp.utils.losses.DiceLoss()
+    loss = DiceLoss()
     metrics = [
-        smp.utils.metrics.IoU(threshold=0.5),
+        IoU(threshold=0.5),
     ]
 
     optimizer = torch.optim.Adam([
@@ -150,7 +146,7 @@ def train_model(model, init_lr, num_epochs, out_path, train_loader, val_loader, 
         loss=loss,
         metrics=metrics,
         optimizer=optimizer,
-        device=DEVICE,
+        device=device,
         verbose=True
     )
 
@@ -159,7 +155,7 @@ def train_model(model, init_lr, num_epochs, out_path, train_loader, val_loader, 
         model,
         loss=loss,
         metrics=metrics,
-        device=DEVICE,
+        device=device,
         verbose=True
     )
 
@@ -236,7 +232,7 @@ if __name__ == '__main__':
     # Hyper parameters
     parser = argparse.ArgumentParser(description='PyTorch WaterNet Model Testing')
     # Required: Path to the .pth file.
-    parser.add_argument('--dataset_path',
+    parser.add_argument('--dataset-path',
                         type=str,
                         metavar='PATH',
                         help='Path to the dataset. Expects format shown in the header comments.')
@@ -247,17 +243,17 @@ if __name__ == '__main__':
                         help='Encoder name, as used by segmentation_model.pytorch library')
     # Optional: Image input size that the model should be designed to accept. In LinkNet, image will be
     #           subsampled 5 times, and thus must be a factor of 32.
-    parser.add_argument('--input_shape',
+    parser.add_argument('--input-shape',
                         default=416,
                         type=int,
                         help='(OPTIONAL) Input size for model. Single integer, should be a factor of 32.')
     # Optional: Batch size for mini-batch gradient descent. Defaults to 4, depends on GPU and your input shape.
-    parser.add_argument('--batch_size',
+    parser.add_argument('--batch-size',
                         default=4,
                         type=int,
                         help='(OPTIONAL)  Batch size for mini-batch gradient descent.')
     # Initial Learning Rate: Initial learning rate. Learning gets set to 1e-5 halfway through training.
-    parser.add_argument('--init_lr',
+    parser.add_argument('--init-lr',
                         default=1e-4,
                         type=float,
                         help='(OPTIONAL)  Batch size for mini-batch gradient descent.')
@@ -267,7 +263,7 @@ if __name__ == '__main__':
                         type=int,
                         help='(OPTIONAL) Number of epochs for training')
     # Optional: Which folder the checkpoints will be saved. Defaults to a new checkpoint folder in output.
-    parser.add_argument('--out_path',
+    parser.add_argument('--out-path',
                         default=DEFAULT_CHKPT_DIR,
                         type=str,
                         metavar='PATH',
@@ -282,6 +278,10 @@ if __name__ == '__main__':
     print(torch.cuda.get_device_name(0))
     print("== System Details ==")
     print()
+
+    device = torch.device('cpu')
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
 
     train(_args)
     print("Done.")
