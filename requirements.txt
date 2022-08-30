@@ -11,6 +11,6 @@ numpy
 scipy
 pandas
 pillow
-segmentation_models_pytorch
+segmentation_models_pytorch==0.2.0
 opencv-contrib-python==4.4.0.46
 opencv-python==4.4.0.46

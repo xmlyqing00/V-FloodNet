@@ -139,7 +139,7 @@ Retrain the model from scratch or your own data could take a long time for weeks
 To train the image segmentation module, please refer to the `train_image_seg.py`
 ```
 python train_image_seg.py \
-  --dataset-path /mnt/d/Datasets/WaterDataset/train_images/ \
+  --dataset-path=/path/to/Datasets/WaterDataset/train_images/ \
   --encoder=efficientnet-b4
 ```
 

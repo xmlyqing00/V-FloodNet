@@ -40,7 +40,7 @@ def random_affine_transformation(img, mask, label, verbose=False):
         translate_v = random.uniform(-0.2, 0.2)
         scale = random.uniform(0.7, 1.3)
         shear = random.uniform(-20, 20)
-        resample = Image.BICUBIC
+        resample = TF.InterpolationMode.BICUBIC
 
         img = TF.affine(img, degrees, (translate_h, translate_v), scale, shear, resample)
         if mask:
@@ -73,7 +73,7 @@ def random_mask_perturbation(mask, verbose=False):
     translate_v = random.uniform(-0.1, 0.1)
     scale = random.uniform(0.8, 1.2)
     shear = random.uniform(-10, 10)
-    resample = Image.BICUBIC
+    resample = TF.InterpolationMode.BICUBIC
 
     mask = TF.affine(mask, degrees, (translate_h, translate_v), scale, shear, resample)
 
@@ -129,10 +129,10 @@ def random_resized_crop(img, mask, label, size, verbose=False):
         x = (img.size[0] - w) // 2
         h = w
 
-    img = TF.resized_crop(img, y, x, h, w, size, Image.BICUBIC)
+    img = TF.resized_crop(img, y, x, h, w, size, TF.InterpolationMode.BICUBIC)
     if mask:
-        mask = TF.resized_crop(mask, y, x, h, w, size, Image.BICUBIC)
-    label = TF.resized_crop(label, y, x, h, w, size, Image.BICUBIC)
+        mask = TF.resized_crop(mask, y, x, h, w, size, TF.InterpolationMode.BICUBIC)
+    label = TF.resized_crop(label, y, x, h, w, size, TF.InterpolationMode.BICUBIC)
 
     if verbose:
         print('x: %d, y: %d, w: %d, h: %d' % (x, y, w, h))
