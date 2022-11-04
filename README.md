@@ -153,4 +153,4 @@ python train_video_seg.py \
 ```
 
 ## 4 Copyright
-This paper is submitted to Elsevier Journal Computers, Environment and Urban Systems under review. The corresponding author is Xin Li (Xin Li <xin.shane.li@ieee.org>).  All rights are reserved.
+This paper is submitted to Journal Environmental Modeling and Software under review. The corresponding author is Xin Li (Xin Li <xin.shane.li@ieee.org>).  All rights are reserved.
