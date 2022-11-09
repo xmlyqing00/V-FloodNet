@@ -127,7 +127,7 @@ def main(args):
         ax.plot(timestamp_list_est, gt_csv.iloc[:, old_col_id],
                 '-', linewidth=markersize//3, label=f'Estimated {type} (Jafari et al.)')
         ax.axhline(y=high_water_val, linestyle='--', linewidth=4)
-        ax.text(timestamp_list_est[-700], high_water_val, 'Peak Water Elevation', va='center', ha='center', backgroundcolor='w', fontsize=fontsize)
+        ax.text(timestamp_list_est[-1000], high_water_val, 'Observed High Water Mark', va='center', ha='center', backgroundcolor='w', fontsize=fontsize)
         ax.legend(loc='upper right', fontsize=fontsize)
     else:
         ax.plot(timestamp_list_est, waterlevel[metric], 'o', markersize=markersize, label=f'Estimated {type}')
