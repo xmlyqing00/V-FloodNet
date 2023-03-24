@@ -104,9 +104,9 @@ def get_video_ref(ref_img, ref_bbox_path, tracker_num, enable_tracker):
         np.savetxt(ref_bbox_path, np.array(ref_bbox), '%.4f')
 
     if enable_tracker:
-        tracker = cv2.legacy.MultiTracker_create()
+        tracker = cv2.MultiTracker_create()
         for i in range(tracker_num):
-            tracker.add(cv2.legacy.TrackerCSRT_create(), ref_img, ref_bbox[i])
+            tracker.add(cv2.TrackerCSRT_create(), ref_img, tuple(ref_bbox[i]))
         # tracker = cv2.TrackerCSRT_create()
         # tracker.init(ref_img, ref_bbox)
     else:
