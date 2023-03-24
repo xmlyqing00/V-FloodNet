@@ -3,6 +3,8 @@
 This is an official PyTorch implementation for paper "V-FloodNet: A Video Segmentation System for Urban Flood Detection and Quantification". A robust automatic system for water level or inundation depth estimation from images and videos, consisting of reliable
 water and reference object detection/segmentation, and depth estimation models. 
 
+This paper was published on Environmental Modelling & Software, Elsevier (2023). Click [here](https://www.sciencedirect.com/science/article/pii/S1364815222002869?casa_token=-eyHhrbYSpAAAAAA:jddGSA5W9ME5YMJbMiMoZ5UfBf3qrQbEyhLWTBP7akl9Pq8tnHXxzVJBFb9D0PDlmREeaoWnJAc) to view the paper.
+
 Here are some screenshots of our results. We can estimate water depth from the detected objects in the scene.
 ![](assets/screenshot_people.png)
 
@@ -153,4 +155,15 @@ python train_video_seg.py \
 ```
 
 ## 4 Copyright
+```
+@article{liang2023v,
+  title={V-FloodNet: A video segmentation system for urban flood detection and quantification},
+  author={Liang, Yongqing and Li, Xin and Tsai, Brian and Chen, Qin and Jafari, Navid},
+  journal={Environmental Modelling \& Software},
+  volume={160},
+  pages={105586},
+  year={2023},
+  publisher={Elsevier}
+}
+```
 This paper is submitted to Journal Environmental Modeling and Software under review. The corresponding author is Xin Li (Xin Li <xin.shane.li@ieee.org>).  All rights are reserved.
