@@ -47,14 +47,14 @@ def main(args):
     waterlevel_path = os.path.join(out_dir, 'waterlevel.csv')
     waterlevel = pd.read_csv(waterlevel_path, index_col=0)
 
-    gt_csv_path = os.path.join(gt_dir, f'{args.test_name}_gt.csv')
+    gt_csv_path = os.path.join(gt_dir, args.test_name, 'gt.csv')
     if not os.path.exists(gt_csv_path):
-        raise FileNotFoundError('Please prepare the groundtruth file like *_gt.csv in ./records/groundtruth')
+        raise FileNotFoundError('Please prepare the groundtruth file like gt.csv in ./records/groundtruth/<test_name>')
     gt_csv = pd.read_csv(gt_csv_path)
 
-    px_to_meter_path = os.path.join(gt_dir, f'{args.test_name}_px_to_meter.txt')
+    px_to_meter_path = os.path.join(gt_dir, args.test_name, 'px_to_meter.txt')
     if not os.path.exists(px_to_meter_path):
-        raise FileNotFoundError('Please prepare the conversion file like *_px_to_meter.txt in ./records/groundtruth')
+        raise FileNotFoundError('Please prepare the conversion file like px_to_meter.txt in ./records/groundtruth/<test_name>')
     px_to_meter = np.loadtxt(px_to_meter_path)
 
     if px_to_meter.ndim == 1:

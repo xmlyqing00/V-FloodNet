@@ -3,17 +3,15 @@ import numpy as np
 import pandas as pd
 import copy
 import warnings
-
-import myutils
+import shutil
 import os
-from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from datetime import datetime
 from scipy.ndimage import gaussian_filter1d
 from tqdm import trange
 
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import matplotlib.dates as mdates
-from pandas.plotting import register_matplotlib_converters
+import myutils
 
 
 rectify_window_name = 'Select 4 pts to get homography matrix'
@@ -115,7 +113,7 @@ def get_video_ref(ref_img, ref_bbox_path, tracker_num, enable_tracker):
     return ref_bbox, tracker
 
 
-def est_by_reference(img_list, water_mask_list, out_dir, test_name):
+def est_by_reference(img_list, water_mask_list, out_dir, record_dir, test_name):
     if 'houston' in test_name:
         enable_tracker = False
         enable_calib = False
@@ -142,10 +140,18 @@ def est_by_reference(img_list, water_mask_list, out_dir, test_name):
         ticker_locator = mdates.MinuteLocator(interval=3)
 
     if enable_calib:
+
+        record_homo_mat_path = os.path.join(record_dir, test_name, 'homo_mat.txt')
         homo_mat_path = os.path.join(out_dir, 'homo_mat.txt')
+        print(record_homo_mat_path)
+        if os.path.exists(record_homo_mat_path):
+            shutil.copyfile(record_homo_mat_path, homo_mat_path)
         homo_mat = get_video_homo(img_list[0], homo_mat_path)
 
+    record_ref_bbox_path = os.path.join(record_dir, test_name, 'ref_bbox.txt')
     ref_bbox_path = os.path.join(out_dir, 'ref_bbox.txt')
+    if os.path.exists(record_ref_bbox_path):
+        shutil.copyfile(record_ref_bbox_path, ref_bbox_path)
     ref_bbox = None
 
     waterlevel_list = []

@@ -29,10 +29,12 @@ def main(args):
     out_dir = os.path.join(args.out_dir, f'{args.test_name}_{args.opt}')
     os.makedirs(out_dir, exist_ok=True)
 
+    record_dir = './records/groundtruth'
+
     if args.opt in ['people', 'stopsign']:
         est_by_obj_detection(img_list, water_mask_list, out_dir, args.opt)
     elif args.opt == 'ref':
-        est_by_reference(img_list, water_mask_list, out_dir, args.test_name)
+        est_by_reference(img_list, water_mask_list, out_dir, record_dir, args.test_name)
     else:
         raise NotImplementedError(args.opt)
 
