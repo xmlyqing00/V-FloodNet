@@ -91,8 +91,15 @@ def waterdepth_by_stopsign(img, instances, water_mask, result_dir, img_name):
     template_canvas = np.ones((template_size) + (3,)) * 255
     template_plate_pts = template_plate_pts.astype(int)
     for i in range(pts_n):
-        cv2.line(template_canvas, template_plate_pts[i], template_plate_pts[(i+1) % pts_n], template_color, thickness)
-    cv2.line(template_canvas, template_pole_top, template_pole_bottom, template_color, thickness)
+        # print(tuple(template_plate_pts[i]), tuple(template_plate_pts[(i+1) % pts_n]), template_color, thickness)
+        cv2.line(
+            template_canvas, 
+            tuple(template_plate_pts[i]), 
+            tuple(template_plate_pts[(i+1) % pts_n]), 
+            template_color, 
+            thickness
+        )
+    cv2.line(template_canvas, tuple(template_pole_top), tuple(template_pole_bottom), template_color, thickness)
 
     img_size = img.shape[:2]
     est_canvas = np.ones((img_size) + (3,)) * 255
@@ -125,14 +132,10 @@ def waterdepth_by_stopsign(img, instances, water_mask, result_dir, img_name):
         est_plate_pts = np.float32(np.stack([x_sorted, y_sorted], axis=1))
         template_plate_pts = np.float32(template_plate_pts)
 
-        # trans_mat, status = cv2.findHomography(template_plate_pts, est_plate_pts)
         trans_mat, status = cv2.findHomography(template_plate_pts, est_plate_pts)
         # print('trans mat', trans_mat)
         # print('status', status)
         template_pts = np.concatenate([template_plate_pts, template_pole_top.reshape(1, 2), template_pole_bottom.reshape(1, 2)], axis=0)
-        # template_pts2 = np.concatenate([template_pts, np.ones((10, 1))], axis=1)
-        # template_pts2_proj = np.matmul(trans_mat, (template_pts2.T)).T
-        # template_pts2_proj = template_pts2_proj / template_pts2_proj[:, 2:3]
         template_pts_proj = cv2.perspectiveTransform(template_pts[:, np.newaxis, :], trans_mat)
         template_pts_proj = template_pts_proj.reshape(pts_n + 2, 2).astype(int)
         template_pole_top_proj = template_pts_proj[-2]
@@ -142,21 +145,8 @@ def waterdepth_by_stopsign(img, instances, water_mask, result_dir, img_name):
 
         viz_img = img.copy()
         for i in range(pts_n):
-            cv2.line(viz_img, template_pts_proj[i], template_pts_proj[(i + 1) % pts_n], template_color, thickness)
-            # cv2.line(est_canvas, template_pts_proj[i], template_pts_proj[(i + 1) % pts_n], (200, 0, 200), thickness)
-        #     # cv2.imshow('est', est_canvas)
-        #     # cv2.waitKey()
-        viz_img = cv2.line(viz_img, template_pole_top_proj, template_pole_bottom_proj, template_color, thickness)
-
-        # cv2.imshow('viz_img', viz_img)
-        # cv2.waitKey()
-
-        # rank_y = np.argsort(template_pts_proj[:, 1], axis=0)
-        # est_plate_top = np.mean(approx[rank_y[:2]], axis=0)[0]
-        # est_plate_bottom = np.mean(approx[rank_y[-2:]], axis=0)[0]
-
-        # tt_plate = myutils.dist(est_plate_bottom, est_plate_top, axis=0)
-        # tt_pole = tt_plate / template_plate_height * template_pole_height
+            cv2.line(viz_img, tuple(template_pts_proj[i]), tuple(template_pts_proj[(i + 1) % pts_n]), template_color, thickness)
+        viz_img = cv2.line(viz_img, tuple(template_pole_top_proj), tuple(template_pole_bottom_proj), template_color, thickness)
 
         dir = template_pole_bottom_proj - template_pole_top_proj
         dir = dir / np.linalg.norm(dir)
@@ -174,9 +164,9 @@ def waterdepth_by_stopsign(img, instances, water_mask, result_dir, img_name):
         waterdepth = submerged_ratio * stopsign_meta['pole_height']
 
         est_canvas = cv2.drawContours(est_canvas, cnts, -1, template_color, thickness)
-        est_canvas = cv2.line(est_canvas, template_pole_top_proj, template_pole_bottom_proj, template_color,
+        est_canvas = cv2.line(est_canvas, tuple(template_pole_top_proj), tuple(template_pole_bottom_proj), template_color,
                               thickness)
-        est_canvas = cv2.line(est_canvas, est_pole_bottom_water, template_pole_bottom_proj, submerged_color,
+        est_canvas = cv2.line(est_canvas, tuple(est_pole_bottom_water), tuple(template_pole_bottom_proj), submerged_color,
                               thickness)
 
         template_pole_bottom_water = template_pole_top.copy()
@@ -185,8 +175,8 @@ def waterdepth_by_stopsign(img, instances, water_mask, result_dir, img_name):
 
         template_pole_bottom_water_left = (template_size[1] // 4, template_pole_bottom_water[1])
         template_pole_bottom_water_right = (template_size[1] * 3 // 4, template_pole_bottom_water[1])
-        cv2.line(template_canvas, template_pole_bottom_water, template_pole_bottom, submerged_color, thickness)
-        cv2.line(template_canvas, template_pole_bottom_water_left, template_pole_bottom_water_right, water_color,
+        cv2.line(template_canvas, tuple(template_pole_bottom_water), tuple(template_pole_bottom), submerged_color, thickness)
+        cv2.line(template_canvas, tuple(template_pole_bottom_water_left), tuple(template_pole_bottom_water_right), water_color,
                  thickness)
 
         cv2.imwrite(os.path.join(result_dir, f'{img_name}_template.png'), template_canvas)
@@ -291,6 +281,7 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
     det_model = DefaultPredictor(cfg)
 
     waterdepth_list = []
+    obj_num_list = []
     result_dir = os.path.join(out_dir, 'result')
     os.makedirs(result_dir, exist_ok=True)
 
@@ -309,13 +300,14 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
         with torch.no_grad():
             pred_obj = det_model(img)
         instances = pred_obj['instances'].to(torch.device('cpu'))
+        obj_num_list.append(len(instances.pred_boxes))
 
         if opt == 'stopsign':
             submerge_ratio, waterdepth = waterdepth_by_stopsign(img, instances, water_mask, result_dir, img_name)
             waterdepth_list.append((submerge_ratio, waterdepth))
         else:
             waterdepth_by_people(instances, img, water_mask, out_dir, img_name)
-            
+    
     if opt == 'stopsign':
         with open(os.path.join(out_dir, f'waterdepth.txt'), 'w') as f:
             for i in trange(len(img_list), desc='Save Results'):
@@ -345,6 +337,10 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
         for i in trange(len(img_list), desc='Est Depth'):
             img_path = img_list[i]
             img_name = os.path.basename(img_path)[:-4]
+
+            if obj_num_list[i] == 0:
+                print(f'No people bounding box is detected from image {img_name}. Skip.')
+                continue
 
             img = cv2.imread(os.path.join(out_dir, 'input', f'{img_name}.png'))
             mask = np.array(myutils.load_image_in_PIL(os.path.join(out_dir, 'mask', f'{img_name}.png'), 'P'))
@@ -393,5 +389,10 @@ def est_by_obj_detection(img_list, water_mask_list, out_dir, opt):
         with open(os.path.join(out_dir, f'waterdepth.txt'), 'w') as f:
             for i in trange(len(img_list), desc='Save Results'):
                 img_name = os.path.basename(img_list[i])[:-4]
+
+                if obj_num_list[i] == 0:
+                    print(f'No people bounding box is detected from image {img_name}. Skip.')
+                    continue
+
                 waterdepth = submerge_ratio_list[i] * people_meta['man_height']
                 f.write(f'{img_name}\t{submerge_ratio_list[i]:.4f}\t{waterdepth:.4f}\n')
