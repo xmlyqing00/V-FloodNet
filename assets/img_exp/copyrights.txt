@@ -1,0 +1,18 @@
+flood1.jpg: 
+	https://www.istockphoto.com/photo/flooded-streets-gm637729106-113908641
+	Credit:Kirkikis 
+	Largest size: 3508 x 2332 px (11.69 x 7.77 in.) - 300 dpi - RGB
+	Stock photo ID:637729106
+	Upload date:January 09, 2017
+
+flood0.jpg:
+	https://www.alamy.com/stock-photo-a-man-name-not-known-wades-through-flood-water-near-pickering-north-110122130.html?imageid=E2A9EDAF-F43C-414F-AB68-368DA228455F&p=309297&pn=1&searchId=4afdc4afbd4aeff429ad10b1237ab588&searchtype=0
+	IMAGE DETAILS
+	Contributor:PA Images / Alamy Stock Photo
+	File size:15.3 MB (766 KB Compressed download)
+	Releases:Model - no | Property - noDo I need a release?
+	Dimensions:2070 x 2586 px | 17.5 x 21.9 cm | 6.9 x 8.6 inches | 300dpi
+	Date taken:5 September 2008
+	Location:Sinnington UK
+	Photographer:John Giles
+	More information: This image could have imperfections as it’s either historical or reportage. Autumn weather
