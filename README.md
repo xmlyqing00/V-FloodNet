@@ -9,8 +9,7 @@ Here are some screenshots of our results. We can estimate water depth from the d
 ![](assets/screenshot_people.png)
 
 We can also estimate water level from from long videos under various weather and illumination conditions.
-![](https://res.cloudinary.com/xmlyqing00/image/upload/v1734297629/vfloodnet-demo-800x600_w8cwkb.gif)
-![](assets/screenshot_video.png)
+![](assets/vfloodnet-demo-800x600.gif)
 
 We provide our **dataset** and **results** in [Google Drive](https://drive.google.com/drive/folders/1DURwcb_qhBeWYznTrpJ-7yGJTHxm7pxC?usp=sharing).
 More demo videos are available in the `animation_videos` folder.
