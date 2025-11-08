@@ -11,7 +11,7 @@ Here are some screenshots of our results. We can estimate water depth from the d
 We can also estimate water level from from long videos under various weather and illumination conditions.
 ![](assets/vfloodnet-demo-800x600.gif)
 
-We provide our **dataset** and **results** in [Google Drive](https://drive.google.com/drive/folders/1DURwcb_qhBeWYznTrpJ-7yGJTHxm7pxC?usp=sharing).
+We provide our **dataset** and **results** in [Hugging Face](https://huggingface.co/xmlyqing00/V-FloodNet/tree/main) and [Google Drive](https://drive.google.com/drive/folders/1DURwcb_qhBeWYznTrpJ-7yGJTHxm7pxC?usp=sharing).
 More demo videos are available in the `animation_videos` folder.
 
 ## 1 Environments
@@ -132,7 +132,7 @@ Second, due to the license, we have to manually download some body files.
 1. Download SMPL model `SMPLIFY_CODE_V2.ZIP` from the official website [SMPLify](http://smplify.is.tue.mpg.de/). When it starts downloading, it shows `mpips_smplify_public_v2.zip`. 
 2. Extract it and copy the model file `basicModel_neutral_lbs_10_207_0_v1.0.0.pkl` from `smplify_public/code/models/` to `V-FloodNet/MeshTransformer/metro/modeling/data/`.
 
-Third, download the archives from [Google Drive](https://drive.google.com/drive/folders/1DURwcb_qhBeWYznTrpJ-7yGJTHxm7pxC?usp=sharing).
+Third, download the archives from [Hugging Face](https://huggingface.co/xmlyqing00/V-FloodNet/tree/main).
 1. Extract the pretrained models for water segmentation `records.zip` and put them in the folder `V-FloodNet/records/`. 
 2. Extract the water dataset `WaterDataset` in any path, which includes the training images and testing videos. You can put it at `V-FloodNet/WaterDataset/`.
 
