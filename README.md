@@ -241,7 +241,7 @@ python train_image_seg.py \
   --encoder=efficientnet-b4
 ```
 
-To train the video segmentation module, please refer to the `train_video_seg.py`. We provide an initial training point in [Google Drive](https://drive.google.com/file/d/1l9TXNV4YQMAxL8RqfL14-qofn_s641Dx/view?usp=sharing), where the network weights are pretrained on large general videos.
+To train the video segmentation module, please refer to the `train_video_seg.py`. We provide an initial training point in [Hugging Face](https://huggingface.co/xmlyqing00/AFB-URR/tree/main), where the network weights are pretrained on large general videos.
 We use the following parameters to train our model
 ```
 python train_video_seg.py \
